@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Setra Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="parchment-vignette"></div>
+
+    <div id="toast" class="toast hidden" role="status"></div>
+    <div id="notice" class="notice hidden" role="dialog" aria-modal="true"></div>
+    <div id="story-overlay" class="overlay-dark hidden" role="dialog" aria-modal="true"></div>
+
+    <section id="screen-mode" class="screen">
+      <div class="menu">
+        <p class="menu-title">The Setra Game</p>
+        <div class="menu-actions">
+          <button type="button" class="btn btn--menu btn--gold" data-mode="single">
+            Singleplayer
+          </button>
+          <button type="button" class="btn btn--menu btn--bronze" data-mode="multi">
+            Multiplayer
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-setup" class="screen hidden">
+      <div class="menu menu--wide">
+        <p class="menu-title">Create Character</p>
+        <label class="field">
+          <span>Name</span>
+          <input
+            id="player-name"
+            type="text"
+            maxlength="20"
+            autocomplete="off"
+            placeholder="Your name"
+          />
+        </label>
+        <p class="menu-subhead">Choose a class</p>
+        <div id="class-grid" class="class-grid"></div>
+        <p class="hint">Attributes are forged when the quest begins.</p>
+        <div class="menu-actions">
+          <button type="button" class="btn btn--menu btn--ghost" id="btn-back-mode">
+            Back
+          </button>
+          <button type="button" class="btn btn--menu btn--gold" id="btn-continue" disabled>
+            Continue
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-lobby" class="screen hidden">
+      <div id="lobby-browser" class="menu hidden">
+        <p class="menu-title">Find a Hall</p>
+        <label class="field">
+          <span>Hall name</span>
+          <input
+            id="room-name"
+            type="text"
+            maxlength="28"
+            placeholder="The Ember Keep"
+          />
+        </label>
+        <button type="button" class="btn btn--menu btn--gold" id="btn-create-room">
+          Create Room
+        </button>
+        <label class="field">
+          <span>Room code</span>
+          <input
+            id="room-code"
+            type="text"
+            maxlength="8"
+            placeholder="ABC12"
+            autocomplete="off"
+          />
+        </label>
+        <button type="button" class="btn btn--menu btn--bronze" id="btn-join-code">
+          Join by Code
+        </button>
+        <div id="room-list" class="room-list"></div>
+        <div class="menu-actions">
+          <button type="button" class="btn btn--menu btn--ghost" id="btn-back-setup">
+            Back
+          </button>
+        </div>
+      </div>
+
+      <div id="lobby-room" class="menu hidden">
+        <div class="room-head">
+          <p class="room-title" id="room-title">Hall</p>
+          <p class="code-line">
+            Code: <span id="room-code-display">—</span>
+            <span id="room-status-badge" class="badge">Lobby</span>
+          </p>
+        </div>
+        <ul id="player-list" class="player-list"></ul>
+        <div class="menu-actions">
+          <button type="button" class="btn btn--menu btn--ghost" id="btn-leave-room">
+            Leave
+          </button>
+          <button type="button" class="btn btn--menu btn--bronze" id="btn-ready">
+            Ready
+          </button>
+          <button type="button" class="btn btn--menu btn--gold hidden" id="btn-start">
+            Start Game
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-town" class="screen hidden">
+      <div class="panel panel--dashboard">
+        <div id="town-main">
+          <div class="dashboard-grid">
+            <aside id="profile-card" class="profile-card"></aside>
+
+            <div class="action-panel">
+              <div class="town-header">
+                <div>
+                  <p class="eyebrow">The Town</p>
+                  <h2>Setra Village</h2>
+                </div>
+                <div class="town-day">
+                  <span class="day-label">Day</span>
+                  <span id="town-day" class="day-value">1</span>
+                </div>
+              </div>
+
+              <p class="action-title">What would you like to do?</p>
+              <div id="action-cards" class="action-cards"></div>
+
+              <div id="town-party" class="town-party"></div>
+              <div id="town-log" class="town-log"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="dungeon-view" class="overlay-view hidden">
+          <div class="overlay-head">
+            <p class="eyebrow">Dungeon</p>
+            <button type="button" class="btn btn--ghost" id="btn-dungeon-close">Back to Town</button>
+          </div>
+          <div id="dungeon-content"></div>
+        </div>
+
+        <div id="tavern-view" class="overlay-view hidden">
+          <div class="overlay-head">
+            <p class="eyebrow">The Tavern</p>
+            <button type="button" class="btn btn--ghost" id="btn-tavern-close">Back to Town</button>
+          </div>
+          <div id="tavern-content"></div>
+        </div>
+
+        <div id="blacksmith-view" class="overlay-view hidden">
+          <div class="overlay-head">
+            <p class="eyebrow">The Blacksmith</p>
+            <button type="button" class="btn btn--ghost" id="btn-blacksmith-close">Back to Town</button>
+          </div>
+          <div id="blacksmith-content"></div>
+        </div>
+
+        <div id="inventory-view" class="overlay-view hidden">
+          <div class="overlay-head">
+            <p class="eyebrow">Inventory</p>
+            <button type="button" class="btn btn--ghost" id="btn-inventory-close">Back to Town</button>
+          </div>
+          <div id="inventory-content"></div>
+        </div>
+
+        <div id="temple-view" class="overlay-view hidden">
+          <div class="overlay-head">
+            <p class="eyebrow">The Ancient Temple</p>
+            <button type="button" class="btn btn--ghost" id="btn-temple-close">Back to Town</button>
+          </div>
+          <div id="temple-content"></div>
+        </div>
+      </div>
+    </section>
+
+    <div id="music" class="music hidden">
+      <button type="button" id="music-toggle" class="music-toggle" title="Play / Pause">▶</button>
+      <div class="music-meta">
+        <span id="music-track" class="music-track">No music</span>
+        <input
+          id="music-volume"
+          class="music-volume"
+          type="range"
+          min="0"
+          max="100"
+          value="70"
+          aria-label="Volume"
+        />
+      </div>
+    </div>
+    <audio id="music-audio" preload="none"></audio>
+
+    <div id="chat" class="chat hidden">
+      <div class="chat-header">
+        <span class="chat-title">Hall Chat</span>
+        <button type="button" id="chat-toggle" class="chat-toggle" title="Collapse">−</button>
+      </div>
+      <div id="chat-body" class="chat-body"></div>
+      <div class="chat-input">
+        <input
+          id="chat-text"
+          type="text"
+          maxlength="200"
+          autocomplete="off"
+          placeholder="Say something…"
+        />
+        <button type="button" id="chat-send" class="chat-send" title="Send" aria-label="Send">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 2 11 13" />
+            <path d="M22 2 15 22l-4-9-9-4 20-7z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="edge-buttons" class="edge-buttons hidden">
+      <button type="button" id="btn-main-menu" class="edge-btn edge-btn--menu" title="Leave the game and return to the main menu">
+        ☰ Menu
+      </button>
+      <button type="button" id="btn-sound" class="edge-btn edge-btn--sound" title="Toggle sound effects">
+        ♪ On
+      </button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/screens.js"></script>
+    <script src="/js/client.js"></script>
+  </body>
+</html>
