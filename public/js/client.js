@@ -81,7 +81,8 @@ function renderTown(room) {
   const me = room.players.find((p) => p.id === state.playerId);
   const myD = me && me.dungeonId && (room.dungeons || []).find((d) => d.id === me.dungeonId);
   const inCombat = myD && (myD.status === "fighting" || myD.status === "done");
-  $("btn-dungeon-close").style.display = inCombat ? "none" : "";
+  const dungeonCloseBtn = $("btn-dungeon-close");
+if (dungeonCloseBtn) dungeonCloseBtn.style.display = inCombat ? "none" : ""; 
 
   if (me && room.log && room.log.type === "search" && room.log.name === me.name && state.searchResultKey !== room.log.ts) {
     state.searchResultKey = room.log.ts;
@@ -246,40 +247,13 @@ $("btn-dungeon-close").addEventListener("click", () => {
   renderTown(state.room);
 });
 
-$("btn-tavern-close").addEventListener("click", () => {
-  state.tavernOpen = false;
-  renderTown(state.room);
-});
-
-$("btn-blacksmith-close").addEventListener("click", () => {
-  state.blacksmithOpen = false;
-  renderTown(state.room);
-});
-
-$("btn-merchant-close").addEventListener("click", () => {
-  state.merchantOpen = false;
-  renderTown(state.room);
-});
-
-$("btn-temple-close").addEventListener("click", () => {
-  state.templeOpen = false;
-  renderTown(state.room);
-});
-
-$("btn-inventory-close").addEventListener("click", () => {
-  state.inventoryOpen = false;
-  renderTown(state.room);
-});
 
 $("btn-boss-map").addEventListener("click", () => {
   state.bossOpen = true;
   renderTown(state.room);
 });
 
-$("btn-boss-close").addEventListener("click", () => {
-  state.bossOpen = false;
-  renderTown(state.room);
-});
+
 
 $("chat-send").addEventListener("click", sendChat);
 $("chat-text").addEventListener("keydown", (e) => {

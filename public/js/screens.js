@@ -1175,6 +1175,13 @@ function renderCombat(room, root) {
   const isMyTurn = d.status === "fighting" && d.phase === "players" && d.currentTurnId === state.playerId;
   const canAct = isMyTurn && me && me.hp > 0;
   const current = members.find((p) => p.id === d.currentTurnId);
+  // Ölü oyuncuya sıra geldiyse hemen turu devret:
+  if (isMyTurn && me && me.hp <= 0) {
+    stopCombatTimer();
+    state.timerDeadline = null;
+    socket.emit("combat:endTurn");
+    return;
+  }
 
   if (!canAct && state.selectedSkill) state.selectedSkill = null;
 

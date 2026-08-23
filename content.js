@@ -129,8 +129,7 @@ const CONTENT = {
       },
       "startingSkills": [
         "heavy_strike",
-        "defend",
-        "battle_fury"
+        "defend"
       ],
       "evolution": {
         "level": 20,
@@ -1706,9 +1705,6 @@ const CONTENT = {
     "blacksmith": {
       "stamina": 2
     },
-    "merchant": {
-      "stamina": 1
-    },
     "tavern": {
       "stamina": 1,
       "bets": [
@@ -2137,22 +2133,6 @@ const CONTENT = {
       "sound": [
         "skull_crush"
       ]
-    },
-    "buff": {
-      "animation": "defend",
-      "color": "#8fe08a",
-      "particles": "glow",
-      "sound": [
-        "shield"
-      ]
-    },
-    "dot": {
-      "animation": "hit",
-      "color": "#b98cff",
-      "particles": "pulse",
-      "sound": [
-        "bloodmagic1"
-      ]
     }
   },
   "dungeonSizes": [
@@ -2223,7 +2203,6 @@ const CONTENT = {
       "monsterCount": 2,
       "monsterPower": 1,
       "sizeProfile": "more",
-      "displayOrder": 1,
       "loot": {
         "legendary": 0.5,
         "epic": 1.5,
@@ -2252,7 +2231,6 @@ const CONTENT = {
       "monsterCount": 2,
       "monsterPower": 1.3,
       "sizeProfile": "more",
-      "displayOrder": 3,
       "loot": {
         "legendary": 1,
         "epic": 3,
@@ -2281,7 +2259,6 @@ const CONTENT = {
       "monsterCount": 3,
       "monsterPower": 1.6,
       "sizeProfile": "more",
-      "displayOrder": 2,
       "loot": {
         "legendary": 2,
         "epic": 5,
@@ -2310,7 +2287,6 @@ const CONTENT = {
       "monsterCount": 3,
       "monsterPower": 2,
       "sizeProfile": "more",
-      "displayOrder": 4,
       "loot": {
         "legendary": 3.5,
         "epic": 8,
@@ -2338,7 +2314,6 @@ const CONTENT = {
       "monsterCount": 3,
       "monsterPower": 2.6,
       "sizeProfile": "more",
-      "displayOrder": 5,
       "loot": {
         "legendary": 6,
         "epic": 12,
@@ -2366,7 +2341,6 @@ const CONTENT = {
       "monsterCount": 4,
       "monsterPower": 3.3,
       "sizeProfile": "fewerStronger",
-      "displayOrder": 6,
       "loot": {
         "legendary": 10,
         "epic": 18,
@@ -2394,7 +2368,6 @@ const CONTENT = {
       "monsterCount": 4,
       "monsterPower": 4.2,
       "sizeProfile": "fewerStronger",
-      "displayOrder": 7,
       "loot": {
         "legendary": 14,
         "epic": 24,
@@ -2421,7 +2394,6 @@ const CONTENT = {
       "monsterCount": 5,
       "monsterPower": 5.5,
       "sizeProfile": "fewerStronger",
-      "displayOrder": 8,
       "loot": {
         "legendary": 18,
         "epic": 30,
@@ -2447,305 +2419,12 @@ const CONTENT = {
       "monsterCount": 1,
       "monsterPower": 1,
       "sizeProfile": "more",
-      "displayOrder": 9,
       "loot": {
         "legendary": 0.8,
         "epic": 2,
         "mythic": 0.3,
         "remnant": 0.06
       }
-    },
-    {
-      "rank": "ssr",
-      "label": "SSR Dungeon",
-      "image": "/images/dungeons/ssr.png",
-      "stamina": 6,
-      "xpReward": 800,
-      "goldScale": 3.5,
-      "woodScale": 2.5,
-      "goldBase": 800,
-      "woodBase": 400,
-      "monsterPool": [
-        "hydra",
-        "lich",
-        "ancient_golem",
-        "wyvern",
-        "dark_knight",
-        "witch"
-      ],
-      "monsterCount": 6,
-      "monsterPower": 8.0,
-      "sizeProfile": "fewerStronger",
-      "displayOrder": 10,
-      "loot": {
-        "legendary": 30,
-        "epic": 50,
-        "mythic": 25,
-        "remnant": 5,
-        "ancient_relic": 1
-      }
-    },
-    {
-      "rank": "special_golem_hideout",
-      "label": "The Hideout of Great Golem",
-      "image": "/images/dungeons/special_golem.png",
-      "stamina": 3,
-      "xpReward": 120,
-      "goldScale": 0.8,
-      "woodScale": 1.2,
-      "goldBase": 100,
-      "woodBase": 80,
-      "monsterPool": [
-        "golem",
-        "stone_warden",
-        "ancient_golem"
-      ],
-      "monsterCount": 3,
-      "monsterPower": 1.5,
-      "sizeProfile": "more",
-      "displayOrder": 11,
-      "loot": {
-        "legendary": 2,
-        "epic": 5,
-        "mythic": 1,
-        "remnant": 0.2
-      },
-      "isSpecial": true,
-      "specialType": "golem",
-      "boss": "golem_king"
-    },
-    {
-      "rank": "special_ancient_forest",
-      "label": "Ancient Forest Sanctuary",
-      "image": "/images/dungeons/special_forest.png",
-      "stamina": 3,
-      "xpReward": 130,
-      "goldScale": 0.9,
-      "woodScale": 1.5,
-      "goldBase": 110,
-      "woodBase": 100,
-      "monsterPool": [
-        "grove_sprite",
-        "thorn_viper",
-        "griffin"
-      ],
-      "monsterCount": 3,
-      "monsterPower": 1.8,
-      "sizeProfile": "more",
-      "displayOrder": 12,
-      "loot": {
-        "legendary": 2.5,
-        "epic": 6,
-        "mythic": 1.2,
-        "remnant": 0.25
-      },
-      "isSpecial": true,
-      "specialType": "nature",
-      "boss": "forest_guardian"
-    },
-    {
-      "rank": "special_cursed_crypt",
-      "label": "Cursed Crypt of Shadows",
-      "image": "/images/dungeons/special_crypt.png",
-      "stamina": 4,
-      "xpReward": 180,
-      "goldScale": 1.2,
-      "woodScale": 0.8,
-      "goldBase": 150,
-      "woodBase": 60,
-      "monsterPool": [
-        "wraith",
-        "skeleton",
-        "dark_knight"
-      ],
-      "monsterCount": 4,
-      "monsterPower": 2.2,
-      "sizeProfile": "fewerStronger",
-      "displayOrder": 13,
-      "loot": {
-        "legendary": 4,
-        "epic": 10,
-        "mythic": 2,
-        "remnant": 0.4
-      },
-      "isSpecial": true,
-      "specialType": "shadow",
-      "boss": "shadow_lord"
-    },
-    {
-      "rank": "special_volcanic_core",
-      "label": "Volcanic Core",
-      "image": "/images/dungeons/special_volcano.png",
-      "stamina": 4,
-      "xpReward": 220,
-      "goldScale": 1.5,
-      "woodScale": 1.0,
-      "goldBase": 200,
-      "woodBase": 90,
-      "monsterPool": [
-        "manticore",
-        "wyvern",
-        "ogre"
-      ],
-      "monsterCount": 4,
-      "monsterPower": 2.8,
-      "sizeProfile": "fewerStronger",
-      "displayOrder": 14,
-      "loot": {
-        "legendary": 6,
-        "epic": 14,
-        "mythic": 3.5,
-        "remnant": 0.6
-      },
-      "isSpecial": true,
-      "specialType": "fire",
-      "boss": "fire_titan"
-    },
-    {
-      "rank": "special_crystal_cavern",
-      "label": "Crystal Cavern of Echoes",
-      "image": "/images/dungeons/special_crystal.png",
-      "stamina": 5,
-      "xpReward": 300,
-      "goldScale": 2.0,
-      "woodScale": 1.3,
-      "goldBase": 300,
-      "woodBase": 130,
-      "monsterPool": [
-        "witch",
-        "lich",
-        "ancient_golem"
-      ],
-      "monsterCount": 5,
-      "monsterPower": 3.5,
-      "sizeProfile": "fewerStronger",
-      "displayOrder": 15,
-      "loot": {
-        "legendary": 10,
-        "epic": 20,
-        "mythic": 6,
-        "remnant": 1.0
-      },
-      "isSpecial": true,
-      "specialType": "arcane",
-      "boss": "crystal_archon"
-    }
-  ],
-  "bosses": [
-    {
-      "id": "boss1",
-      "name": "The First Guardian",
-      "title": "Warden of the Forgotten Ruins",
-      "minLevel": 10,
-      "recommendedLevel": 15,
-      "image": "/images/bosses/boss1.png",
-      "hp": 5000,
-      "attack": 80,
-      "resistance": 40,
-      "magicPower": 30,
-      "speed": 8,
-      "element": "physical",
-      "skills": ["crushing_blow", "seismic_slam", "iron_will"],
-      "description": "An ancient construct that guards the entrance to the deeper ruins. Its stone fists can shatter bedrock.",
-      "rewards": {
-        "gold": 500,
-        "xp": 1000,
-        "guaranteedDrop": "ancient_relic",
-        "possibleDrops": ["guardian_core", "stone_heart", "ruin_key"]
-      },
-      "position": { x: 15, y: 25 }
-    },
-    {
-      "id": "boss2",
-      "name": "Twin Serpents",
-      "title": "Coiled Corruption",
-      "minLevel": 20,
-      "recommendedLevel": 25,
-      "image": "/images/bosses/boss2.png",
-      "hp": 8000,
-      "attack": 110,
-      "resistance": 50,
-      "magicPower": 60,
-      "speed": 12,
-      "element": "shadow",
-      "skills": ["venomous_bite", "coil_crush", "shadow_veil", "twin_strike"],
-      "description": "Two massive serpents that share a single corrupt soul. They strike in perfect unison, weaving shadows around their coils.",
-      "rewards": {
-        "gold": 1000,
-        "xp": 2500,
-        "guaranteedDrop": "serpent_fang",
-        "possibleDrops": ["venom_sac", "shadow_scale", "twin_essence"]
-      },
-      "position": { x: 35, y: 45 }
-    },
-    {
-      "id": "boss3",
-      "name": "Ancient Lich King",
-      "title": "Master of Undeath",
-      "minLevel": 30,
-      "recommendedLevel": 35,
-      "image": "/images/bosses/boss3.png",
-      "hp": 12000,
-      "attack": 90,
-      "resistance": 60,
-      "magicPower": 120,
-      "speed": 7,
-      "element": "arcane",
-      "skills": ["death_bolt", "raise_undead", "soul_drain", "arcane_barrier", "lich_dominion"],
-      "description": "A centuries-old lich who has mastered the forbidden arts. His phylactery is hidden deep within his citadel.",
-      "rewards": {
-        "gold": 2000,
-        "xp": 5000,
-        "guaranteedDrop": "lich_phylactery",
-        "possibleDrops": ["death_crown", "soul_gem", "ancient_tome"]
-      },
-      "position": { x: 55, y: 20 }
-    },
-    {
-      "id": "boss4",
-      "name": "Void Walker",
-      "title": "Harbinger of Nothingness",
-      "minLevel": 40,
-      "recommendedLevel": 45,
-      "image": "/images/bosses/boss4.png",
-      "hp": 18000,
-      "attack": 140,
-      "resistance": 70,
-      "magicPower": 100,
-      "speed": 15,
-      "element": "shadow",
-      "skills": ["void_step", "reality_tear", "null_field", "entropy_wave", "dimensional_shift"],
-      "description": "A being from beyond the veil, walking between dimensions. Its presence warps reality itself.",
-      "rewards": {
-        "gold": 4000,
-        "xp": 10000,
-        "guaranteedDrop": "void_essence",
-        "possibleDrops": ["reality_shard", "null_crystal", "walker_cloak"]
-      },
-      "position": { x: 75, y: 60 }
-    },
-    {
-      "id": "boss5",
-      "name": "Setra's Fallen Champion",
-      "title": "The Betrayed King",
-      "minLevel": 50,
-      "recommendedLevel": 55,
-      "image": "/images/bosses/boss5.png",
-      "hp": 25000,
-      "attack": 180,
-      "resistance": 90,
-      "magicPower": 150,
-      "speed": 18,
-      "element": "holy",
-      "skills": ["divine_judgment", "radiant_slash", "kingdom_shield", "fallen_wrath", "setras_legacy", "final_stand"],
-      "description": "The first king of Setra, corrupted by his own hubris. He wields the very light he once swore to protect.",
-      "rewards": {
-        "gold": 10000,
-        "xp": 25000,
-        "guaranteedDrop": "setras_crown",
-        "possibleDrops": ["fallen_blade", "kings_armor", "divine_heart", "legacy_seal"]
-      },
-      "position": { x: 90, y: 85 }
     }
   ],
   "items": [
@@ -3374,84 +3053,6 @@ const CONTENT = {
       },
       "image": "/images/items/void_cleaver.png",
       "description": "+30 Attack. The edge drinks the dark."
-    },
-    {
-      "id": "wooden_chest",
-      "name": "Wooden Chest",
-      "slot": "chest",
-      "rarity": "common",
-      "price": {
-        "gold": 60,
-        "wood": 0
-      },
-      "chestTier": "f",
-      "image": "",
-      "description": "A simple chest. Common odds of decent loot."
-    },
-    {
-      "id": "iron_chest",
-      "name": "Iron Chest",
-      "slot": "chest",
-      "rarity": "uncommon",
-      "price": {
-        "gold": 150,
-        "wood": 0
-      },
-      "chestTier": "d",
-      "image": "",
-      "description": "A sturdy chest. Better odds of uncommon loot."
-    },
-    {
-      "id": "gold_chest",
-      "name": "Gold Chest",
-      "slot": "chest",
-      "rarity": "rare",
-      "price": {
-        "gold": 320,
-        "wood": 0
-      },
-      "chestTier": "c",
-      "image": "",
-      "description": "A gilded chest. Decent odds of rare loot."
-    },
-    {
-      "id": "emerald_chest",
-      "name": "Emerald Chest",
-      "slot": "chest",
-      "rarity": "epic",
-      "price": {
-        "gold": 0,
-        "wood": 0
-      },
-      "chestTier": "b",
-      "image": "",
-      "description": "A gem-studded chest. Strong odds of epic loot."
-    },
-    {
-      "id": "obsidian_chest",
-      "name": "Obsidian Chest",
-      "slot": "chest",
-      "rarity": "legendary",
-      "price": {
-        "gold": 0,
-        "wood": 0
-      },
-      "chestTier": "a",
-      "image": "",
-      "description": "A black-glass chest. Fine odds of legendary loot."
-    },
-    {
-      "id": "mythic_chest",
-      "name": "Mythic Chest",
-      "slot": "chest",
-      "rarity": "mythic",
-      "price": {
-        "gold": 0,
-        "wood": 0
-      },
-      "chestTier": "s",
-      "image": "",
-      "description": "A chest of legend. Great odds of mythic loot."
     }
   ],
   "equipmentSlots": [
@@ -4145,235 +3746,6 @@ const CONTENT = {
       "defense": 0.95,
       "image": "/images/skills/immovable.png",
       "description": "Block 95% of incoming damage this round."
-    },
-    {
-      "id": "battle_fury",
-      "name": "Battle Fury",
-      "target": "self",
-      "mana": 8,
-      "buffs": [
-        { "kind": "attack", "value": 0.3 }
-      ],
-      "duration": 2,
-      "image": "/images/skills/battle_fury.png",
-      "description": "Increase your damage by 30% for 2 rounds."
-    },
-    {
-      "id": "iron_wall",
-      "name": "Iron Wall",
-      "target": "self",
-      "mana": 8,
-      "buffs": [
-        { "kind": "defense", "value": 0.4 }
-      ],
-      "duration": 2,
-      "image": "/images/skills/iron_wall.png",
-      "description": "Block 40% of incoming damage for 2 rounds."
-    },
-    {
-      "id": "group_guard",
-      "name": "Group Guard",
-      "target": "party",
-      "mana": 10,
-      "buffs": [
-        { "kind": "defense", "value": 0.25 }
-      ],
-      "duration": 2,
-      "image": "/images/skills/group_guard.png",
-      "description": "The whole party blocks 25% of incoming damage for 2 rounds."
-    },
-    {
-      "id": "cripple",
-      "name": "Cripple",
-      "target": "enemy",
-      "mana": 8,
-      "buffs": [
-        { "kind": "weaken", "value": 0.3 },
-        { "kind": "expose", "value": 0.2 }
-      ],
-      "duration": 2,
-      "image": "/images/skills/cripple.png",
-      "description": "A monster deals 30% less damage and takes 20% more for 2 rounds."
-    },
-    {
-      "id": "venom_strike",
-      "name": "Venom Strike",
-      "target": "enemy",
-      "mana": 9,
-      "power": 0.6,
-      "element": "physical",
-      "buffs": [
-        { "kind": "dot", "value": 0.05 }
-      ],
-      "duration": 3,
-      "image": "/images/skills/venom_strike.png",
-      "description": "Strike for 0.6x damage and poison the monster for 3 rounds."
-    },
-    {
-      "id": "rejuvenate",
-      "name": "Rejuvenate",
-      "target": "ally",
-      "mana": 8,
-      "buffs": [
-        { "kind": "regen", "value": 0.08 }
-      ],
-      "duration": 3,
-      "image": "/images/skills/rejuvenate.png",
-      "description": "An ally regains 8% of max HP each round for 3 rounds."
-    },
-    {
-      "id": "monster_physical_attack",
-      "name": "Savage Blow",
-      "target": "enemy",
-      "kind": "attack",
-      "power": 1.05,
-      "element": "physical",
-      "monster": true,
-      "description": "Monster basic attack."
-    },
-    {
-      "id": "monster_shadow_attack",
-      "name": "Shadow Claw",
-      "target": "enemy",
-      "kind": "attack",
-      "power": 1.15,
-      "element": "shadow",
-      "monster": true,
-      "description": "Monster basic attack."
-    },
-    {
-      "id": "monster_arcane_attack",
-      "name": "Arcane Surge",
-      "target": "enemy",
-      "kind": "attack",
-      "power": 1.15,
-      "element": "arcane",
-      "monster": true,
-      "description": "Monster basic attack."
-    },
-    {
-      "id": "monster_heavy_blow",
-      "name": "Heavy Blow",
-      "target": "enemy",
-      "kind": "attack",
-      "power": 1.5,
-      "element": "physical",
-      "monster": true,
-      "description": "A heavy monster blow."
-    },
-    {
-      "id": "monster_shadow_bolt",
-      "name": "Shadow Bolt",
-      "target": "enemy",
-      "kind": "attack",
-      "power": 1.5,
-      "element": "shadow",
-      "monster": true,
-      "description": "A dark monster blast."
-    },
-    {
-      "id": "monster_arcane_storm",
-      "name": "Arcane Storm",
-      "target": "enemy",
-      "kind": "attack",
-      "power": 1.5,
-      "element": "arcane",
-      "monster": true,
-      "description": "A surge of monster magic."
-    },
-    {
-      "id": "monster_frenzy",
-      "name": "Frenzy",
-      "target": "self",
-      "kind": "buff",
-      "buffs": [
-        { "kind": "attack", "value": 0.3 }
-      ],
-      "duration": 2,
-      "monster": true,
-      "description": "The monster deals 30% more damage for 2 rounds."
-    },
-    {
-      "id": "monster_stoneskin",
-      "name": "Stoneskin",
-      "target": "self",
-      "kind": "buff",
-      "buffs": [
-        { "kind": "defense", "value": 0.3 }
-      ],
-      "duration": 2,
-      "monster": true,
-      "description": "The monster blocks 30% of damage for 2 rounds."
-    },
-    {
-      "id": "monster_regen",
-      "name": "Regenerate",
-      "target": "self",
-      "kind": "buff",
-      "buffs": [
-        { "kind": "regen", "value": 0.05 }
-      ],
-      "duration": 3,
-      "monster": true,
-      "description": "The monster heals 5% of max HP each round for 3 rounds."
-    },
-    {
-      "id": "monster_weaken",
-      "name": "Crushing Aura",
-      "target": "enemy",
-      "kind": "debuff",
-      "buffs": [
-        { "kind": "weaken", "value": 0.25 }
-      ],
-      "duration": 2,
-      "monster": true,
-      "description": "A hero deals 25% less damage for 2 rounds."
-    },
-    {
-      "id": "monster_vulnerable",
-      "name": "Expose Weakness",
-      "target": "enemy",
-      "kind": "debuff",
-      "buffs": [
-        { "kind": "expose", "value": 0.25 }
-      ],
-      "duration": 2,
-      "monster": true,
-      "description": "A hero takes 25% more damage for 2 rounds."
-    },
-    {
-      "id": "monster_poison",
-      "name": "Venom",
-      "target": "enemy",
-      "kind": "debuff",
-      "buffs": [
-        { "kind": "dot", "value": 0.06 }
-      ],
-      "duration": 3,
-      "monster": true,
-      "description": "A hero takes damage each round for 3 rounds."
-    },
-    {
-      "id": "monster_heal",
-      "name": "Graft",
-      "target": "self",
-      "kind": "heal",
-      "amount": 0.15,
-      "monster": true,
-      "description": "The monster restores 15% of max HP."
-    },
-    {
-      "id": "battle_rage",
-      "name": "Battle Rage",
-      "target": "self",
-      "mana": 8,
-      "buffs": [
-        { "kind": "attack", "value": 20 }
-      ],
-      "duration": 3,
-      "maxStacks": 1,
-      "image": "/images/skills/battle_rage.png",
-      "description": "Gain +20 Attack for 3 rounds. Refreshes duration if used again. Does not stack."
     }
   ]
 };
@@ -4421,7 +3793,6 @@ function publicCatalog() {
     town: {
       search: { stamina: CONTENT.town.search.stamina },
       blacksmith: { stamina: CONTENT.town.blacksmith.stamina },
-      merchant: { stamina: CONTENT.town.merchant.stamina },
       tavern: {
         stamina: CONTENT.town.tavern.stamina,
         bets: CONTENT.town.tavern.bets,
@@ -4452,6 +3823,26 @@ function publicCatalog() {
       image: d.image,
       monsterPool: d.monsterPool || [],
     })),
+    
+    bosses: (CONTENT.bosses || []).map((b) => ({
+      id: b.id,
+      name: b.name,
+      title: b.title,
+      minLevel: b.minLevel,
+      recommendedLevel: b.recommendedLevel,
+      image: b.image,
+      hp: b.hp,
+      attack: b.attack,
+      resistance: b.resistance,
+      magicPower: b.magicPower,
+      speed: b.speed,
+      element: b.element,
+      skills: b.skills || [],
+      description: b.description,
+      rewards: b.rewards || {},
+      position: b.position || { x: 50, y: 50 }
+    })),
+
     skills: CONTENT.skills.map((s) => ({
       id: s.id,
       name: s.name,
@@ -4467,10 +3858,6 @@ function publicCatalog() {
       mana: s.mana,
       image: s.image,
       description: s.description || "",
-      buffs: s.buffs || null,
-      duration: s.duration || null,
-      kind: s.kind || null,
-      monster: s.monster || false,
     })),
     items: CONTENT.items.map((i) => ({
       id: i.id,

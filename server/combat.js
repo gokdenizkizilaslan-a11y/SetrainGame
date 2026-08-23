@@ -535,12 +535,19 @@ function advanceTurn(room, d) {
   clearTurnTimer(d);
   d.endedTurns.add(d.currentTurnId);
   d.turnIndex += 1;
-  if (d.turnIndex < d.turnOrder.length) {
-    d.currentTurnId = d.turnOrder[d.turnIndex];
-    resetUsedSkills(d, d.currentTurnId);
-    armTurnTimer(room, d);
-    return false;
+
+  // Ölü oyuncuları otomatik atla
+  while (d.turnIndex < d.turnOrder.length) {
+    const nextPlayer = room.players.find((p) => p.id === d.turnOrder[d.turnIndex]);
+    if (nextPlayer && nextPlayer.hp > 0) {
+      d.currentTurnId = nextPlayer.id;
+      resetUsedSkills(d, d.currentTurnId);
+      armTurnTimer(room, d);
+      return false;
+    }
+    d.turnIndex += 1;
   }
+
   startMonsterPhase(room, d);
   return true;
 }
