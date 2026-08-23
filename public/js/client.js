@@ -76,10 +76,11 @@ function renderLobby(room) {
 function renderTown(room) {
   showScreen("screen-town");
 
-  const inCombat = room.dungeon && (room.dungeon.status === "fighting" || room.dungeon.status === "done");
+  const me = room.players.find((p) => p.id === state.playerId);
+  const myD = me && me.dungeonId && (room.dungeons || []).find((d) => d.id === me.dungeonId);
+  const inCombat = myD && (myD.status === "fighting" || myD.status === "done");
   $("btn-dungeon-close").style.display = inCombat ? "none" : "";
 
-  const me = room.players.find((p) => p.id === state.playerId);
   if (me && room.log && room.log.type === "search" && room.log.name === me.name && state.searchResultKey !== room.log.ts) {
     state.searchResultKey = room.log.ts;
     const parts = [];
@@ -142,7 +143,8 @@ function onRoomState(room) {
   }
   state.prevStatus = room.status;
   if (room.status === "playing") {
-    const inCombat = room.dungeon && (room.dungeon.status === "fighting" || room.dungeon.status === "done");
+    const myD = myDungeon(room);
+    const inCombat = myD && (myD.status === "fighting" || myD.status === "done");
     if (inCombat) state.dungeonOpen = true;
     if (!inCombat) state.pendingFx = [];
     renderTown(room);
@@ -310,9 +312,12 @@ socket.on("room:list", (list) => {
 socket.on("room:state", onRoomState);
 
 socket.on("combat:fx", (payload) => {
-  if (payload && Array.isArray(payload.fx)) {
-    state.pendingFx.push(...payload.fx);
+  if (!payload || !Array.isArray(payload.fx)) return;
+  if (payload.dungeonId) {
+    const me = (state.room && state.room.players.find((p) => p.id === state.playerId)) || null;
+    if (!me || me.dungeonId !== payload.dungeonId) return;
   }
+  state.pendingFx.push(...payload.fx);
 });
 
 socket.on("chat:history", (msgs) => renderChatHistory(msgs));

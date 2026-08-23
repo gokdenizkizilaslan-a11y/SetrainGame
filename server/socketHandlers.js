@@ -76,10 +76,13 @@ function emitRoomState(io, room) {
 }
 
 function emitCombatFx(io, room) {
-  if (!room || !room.dungeon || !room.dungeon.fx || !room.dungeon.fx.length) return;
-  const fx = room.dungeon.fx;
-  room.dungeon.fx = [];
-  io.to(room.id).emit("combat:fx", { fx });
+  if (!room) return;
+  for (const d of room.dungeons || []) {
+    if (!d.fx || !d.fx.length) continue;
+    const fx = d.fx;
+    d.fx = [];
+    io.to(room.id).emit("combat:fx", { fx, dungeonId: d.id });
+  }
 }
 
 function registerSocketHandlers(io) {
@@ -325,7 +328,7 @@ function registerSocketHandlers(io) {
       try {
         const { room, player } = gameContext(socket);
         town.requirePlaying(room, player);
-        if (room.dungeon.memberIds.includes(player.id) && room.dungeon.status !== "idle") {
+        if (dungeon.dungeonFor(room, player)) {
           throw new Error("Finish or leave the delve first.");
         }
         const res = town.endDay(player);
@@ -335,7 +338,7 @@ function registerSocketHandlers(io) {
           for (const p of room.players) {
             onNewDay(p);
           }
-          room.dungeon = dungeon.idleDungeon();
+          dungeon.resetRoomDungeons(room);
           room.log = { type: "day", text: `Day ${room.day} dawns. Stamina restored.`, ts: Date.now() };
         }
         emitRoomState(io, room);
@@ -348,7 +351,7 @@ function registerSocketHandlers(io) {
       try {
         const { room, player } = gameContext(socket);
         town.requirePlaying(room, player);
-        if (room.dungeon.memberIds.includes(player.id) && room.dungeon.status !== "idle") {
+        if (dungeon.dungeonFor(room, player)) {
           throw new Error("Finish or leave the delve first.");
         }
         const res = town.rest(player);
@@ -522,7 +525,8 @@ function registerSocketHandlers(io) {
           emitRoomState(io, room);
         };
         dungeon.startDungeon(room, player);
-        room.log = { type: "dungeon", text: `${room.dungeon.label} ${room.dungeon.size} delve begins!` };
+        const d = dungeon.dungeonFor(room, player);
+        room.log = { type: "dungeon", text: d ? `${player.name} begins a ${d.label} delve!` : `${player.name} begins a delve!` };
         emitRoomState(io, room);
       } catch (err) {
         emitError(socket, err);
@@ -533,7 +537,7 @@ function registerSocketHandlers(io) {
       try {
         const { room, player } = gameContext(socket);
         town.requirePlaying(room, player);
-        dungeon.returnFromDungeon(room);
+        dungeon.returnFromDungeon(room, player);
         room.log = { type: "town", text: "You return to the town square." };
         emitRoomState(io, room);
       } catch (err) {

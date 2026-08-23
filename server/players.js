@@ -143,6 +143,7 @@ function createPlayer({ id, name, character, isHost = false }) {
     connected: true,
     anomaly,
     tavern: null,
+    dungeonId: null,
   };
 }
 
@@ -178,6 +179,7 @@ function publicPlayer(player) {
     endedDay: player.endedDay,
     ready: player.ready,
     isHost: player.isHost,
+    dungeonId: player.dungeonId || null,
     anomaly: player.anomaly
       ? {
           id: player.anomaly.id,

@@ -380,7 +380,8 @@ function startCombatTimer() {
   if (combatTimerInterval) return;
   combatTimerInterval = setInterval(() => {
     const bar = $("turn-timer-fill");
-    if (!state.room || state.room.dungeon.status !== "fighting") {
+    const d = myDungeon(state.room);
+    if (!d || d.status !== "fighting") {
       stopCombatTimer();
       return;
     }
@@ -675,8 +676,16 @@ function renderTownLog(room) {
 
 // ---- Dungeon ----
 
+// The dungeon the local player belongs to (solo or a shared party).
+function myDungeon(room) {
+  if (!room || !room.dungeons || !state.playerId) return null;
+  const me = room.players.find((p) => p.id === state.playerId);
+  if (!me || !me.dungeonId) return null;
+  return room.dungeons.find((d) => d.id === me.dungeonId) || null;
+}
+
 function renderDungeonView(room) {
-  const d = room.dungeon;
+  const d = myDungeon(room);
   const root = $("dungeon-content");
   if (!d || d.status === "idle") return renderDungeonMenu(room, root);
   if (d.status === "forming") return renderDungeonParty(room, root);
@@ -710,7 +719,7 @@ function dungeonDrops(rank) {
 
 function renderDungeonMenu(room, root) {
   root.innerHTML =
-    `<p class="lead">Choose a dungeon, then a size. The first to join a party leads it.</p>` +
+    `<p class="lead">Choose a dungeon, then a size. Pick the same dungeon as a friend to join their party — otherwise it's your own solo delve.</p>` +
     `<div class="dungeon-grid">` +
     CATALOG.dungeons
       .map((dg) => {
@@ -777,12 +786,12 @@ function renderSizeGrid(room, root, rank) {
 }
 
 function renderDungeonParty(room, root) {
-  const d = room.dungeon;
-  const members = d.memberIds.map((id) => room.players.find((p) => p.id === id)).filter(Boolean);
+  const d = myDungeon(room);
+  const members = (d.memberIds || []).map((id) => room.players.find((p) => p.id === id)).filter(Boolean);
   const isLeader = d.leaderId === state.playerId;
   root.innerHTML = `
     <p class="subhead">${escapeHtml(d.label || "")} — ${sizeLabel(d.size)}</p>
-    <p class="lead">The first to join leads. The leader starts the delve; allies need only be here.</p>
+    <p class="lead">The first to join leads. The leader starts the delve; allies need only be here. Others can join by choosing the same dungeon + size.</p>
     <ul class="party-list">
       ${members
         .map(
@@ -824,9 +833,9 @@ function skillTipEl(s) {
 }
 
 function renderCombat(room, root) {
-  const d = room.dungeon;
+  const d = myDungeon(room);
   const me = room.players.find((p) => p.id === state.playerId);
-  const members = d.memberIds.map((id) => room.players.find((p) => p.id === id)).filter(Boolean);
+  const members = (d.memberIds || []).map((id) => room.players.find((p) => p.id === id)).filter(Boolean);
   const isMyTurn = d.status === "fighting" && d.phase === "players" && d.currentTurnId === state.playerId;
   const canAct = isMyTurn && me && me.hp > 0;
   const current = members.find((p) => p.id === d.currentTurnId);

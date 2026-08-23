@@ -2,13 +2,17 @@ const { getDungeon, getDungeonSize } = require("../content");
 const { spendStamina } = require("./town");
 const { spawnWave } = require("./combat");
 
+let dungeonCounter = 0;
+
 function idleDungeon() {
   return {
+    id: null,
     rank: null,
     size: null,
     leaderId: null,
     memberIds: [],
     status: "idle",
+    open: true,
     round: 1,
     wave: [],
     phase: "players",
@@ -31,6 +35,31 @@ function delveUnderway(dungeon) {
   return dungeon.status === "fighting" || dungeon.status === "done";
 }
 
+function dungeonFor(room, player) {
+  return (room.dungeons || []).find((d) => d.memberIds.includes(player.id)) || null;
+}
+
+function generateDungeonId() {
+  dungeonCounter += 1;
+  return "dg_" + dungeonCounter + "_" + Math.random().toString(36).slice(2, 8);
+}
+
+function clearDungeonTimers(d) {
+  if (d.turnTimer) {
+    clearTimeout(d.turnTimer);
+    d.turnTimer = null;
+  }
+  if (d.monsterTimer) {
+    clearTimeout(d.monsterTimer);
+    d.monsterTimer = null;
+  }
+}
+
+function removeDungeonFromRoom(room, d) {
+  clearDungeonTimers(d);
+  room.dungeons = (room.dungeons || []).filter((x) => x !== d);
+}
+
 function joinDungeon(room, player, rank, size) {
   const dungeonDef = getDungeon(rank);
   const sizeDef = getDungeonSize(size);
@@ -40,53 +69,60 @@ function joinDungeon(room, player, rank, size) {
   if (player.endedDay) {
     throw new Error("You have already ended this day.");
   }
-  if (delveUnderway(room.dungeon)) {
-    throw new Error("A delve is already underway.");
+  const existing = dungeonFor(room, player);
+  if (existing) {
+    return existing;
   }
-
-  const matches = room.dungeon.rank === dungeonDef.rank && room.dungeon.size === sizeDef.id;
-  if (room.dungeon.status === "idle" || !matches) {
-    room.dungeon = {
-      ...idleDungeon(),
-      rank: dungeonDef.rank,
-      size: sizeDef.id,
-      leaderId: player.id,
-      memberIds: [player.id],
-      status: "forming",
-    };
-    return room.dungeon;
+  const party = (room.dungeons || []).find(
+    (d) =>
+      d.status === "forming" &&
+      d.open &&
+      d.rank === dungeonDef.rank &&
+      d.size === sizeDef.id &&
+      d.memberIds.length < room.maxPlayers
+  );
+  if (party) {
+    party.memberIds.push(player.id);
+    player.dungeonId = party.id;
+    return party;
   }
-
-  if (room.dungeon.memberIds.includes(player.id)) {
-    return room.dungeon;
-  }
-  if (room.dungeon.memberIds.length >= room.maxPlayers) {
-    throw new Error("That delve is full.");
-  }
-  room.dungeon.memberIds.push(player.id);
-  return room.dungeon;
+  const d = {
+    ...idleDungeon(),
+    id: generateDungeonId(),
+    rank: dungeonDef.rank,
+    size: sizeDef.id,
+    leaderId: player.id,
+    memberIds: [player.id],
+    status: "forming",
+    open: true,
+  };
+  if (!room.dungeons) room.dungeons = [];
+  room.dungeons.push(d);
+  player.dungeonId = d.id;
+  return d;
 }
 
 function leaveDungeon(room, player) {
-  if (room.dungeon.status === "idle") return room.dungeon;
-  if (delveUnderway(room.dungeon)) {
-    room.dungeon = idleDungeon();
-    return room.dungeon;
+  const d = dungeonFor(room, player);
+  if (!d) return null;
+  if (delveUnderway(d)) {
+    throw new Error("Finish the delve first.");
   }
-  room.dungeon.memberIds = room.dungeon.memberIds.filter((id) => id !== player.id);
-  if (room.dungeon.memberIds.length === 0) {
-    room.dungeon = idleDungeon();
-    return room.dungeon;
+  d.memberIds = d.memberIds.filter((id) => id !== player.id);
+  player.dungeonId = null;
+  if (d.memberIds.length === 0) {
+    removeDungeonFromRoom(room, d);
+    return null;
   }
-  if (room.dungeon.leaderId === player.id) {
-    room.dungeon.leaderId = room.dungeon.memberIds[0];
+  if (d.leaderId === player.id) {
+    d.leaderId = d.memberIds[0];
   }
-  return room.dungeon;
+  return d;
 }
 
 function startDungeon(room, player) {
-  const d = room.dungeon;
-  if (d.status !== "forming" || !d.rank || !d.size) {
+  const d = dungeonFor(room, player);
+  if (!d || d.status !== "forming" || !d.rank || !d.size) {
     throw new Error("Gather a party first.");
   }
   if (d.leaderId !== player.id) {
@@ -108,20 +144,38 @@ function startDungeon(room, player) {
   for (const m of members) {
     spendStamina(m, sizeDef.stamina);
   }
-  spawnWave(room);
-  return room.dungeon;
+  d.open = false;
+  spawnWave(room, d);
+  return d;
 }
 
-function returnFromDungeon(room) {
-  room.dungeon = idleDungeon();
-  return room.dungeon;
+function returnFromDungeon(room, player) {
+  const d = dungeonFor(room, player);
+  if (!d) return null;
+  d.memberIds = d.memberIds.filter((id) => id !== player.id);
+  player.dungeonId = null;
+  if (d.memberIds.length === 0) {
+    removeDungeonFromRoom(room, d);
+  }
+  return null;
 }
 
-function publicDungeon(room) {
-  const d = room.dungeon;
+function resetRoomDungeons(room) {
+  for (const d of room.dungeons || []) {
+    clearDungeonTimers(d);
+  }
+  room.dungeons = [];
+  for (const p of room.players) {
+    p.dungeonId = null;
+  }
+}
+
+function publicDungeon(d) {
+  if (!d) return null;
   const def = d.rank ? getDungeon(d.rank) : null;
   const sizeDef = d.size ? getDungeonSize(d.size) : null;
   return {
+    id: d.id,
     rank: d.rank,
     size: d.size,
     label: def ? def.label : null,
@@ -139,7 +193,7 @@ function publicDungeon(room) {
     usedSkills: d.usedSkills
       ? Object.fromEntries(Object.entries(d.usedSkills).map(([k, v]) => [k, [...(v || [])]]))
       : {},
-    wave: d.wave.map((m) => ({ id: m.id, kind: m.kind, name: m.name, image: m.image, hp: m.hp, maxHp: m.maxHp })),
+    wave: (d.wave || []).map((m) => ({ id: m.id, kind: m.kind, name: m.name, image: m.image, hp: m.hp, maxHp: m.maxHp })),
     result: d.result,
     log: d.log,
   };
@@ -152,4 +206,6 @@ module.exports = {
   startDungeon,
   returnFromDungeon,
   publicDungeon,
+  dungeonFor,
+  resetRoomDungeons,
 };

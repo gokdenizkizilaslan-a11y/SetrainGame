@@ -52,7 +52,7 @@ function publicRoomState(room) {
     maxPlayers: room.maxPlayers,
     day: room.day,
     log: room.log,
-    dungeon: publicDungeon(room),
+    dungeons: (room.dungeons || []).map(publicDungeon),
     players: room.players.map(publicPlayer),
   };
 }
@@ -105,7 +105,7 @@ function createRoom({ socketId, name, character, mode, roomName }) {
     maxPlayers: maxForMode(isSingle ? "single" : "multi"),
     day: 1,
     log: null,
-    dungeon: idleDungeon(),
+    dungeons: [],
     chat: [],
     players: [host],
   };
@@ -163,13 +163,9 @@ function leaveRoom(socketId) {
   socketToRoom.delete(socketId);
 
   if (room.players.length === 0) {
-    if (room.dungeon && room.dungeon.turnTimer) {
-      clearTimeout(room.dungeon.turnTimer);
-      room.dungeon.turnTimer = null;
-    }
-    if (room.dungeon && room.dungeon.monsterTimer) {
-      clearTimeout(room.dungeon.monsterTimer);
-      room.dungeon.monsterTimer = null;
+    for (const d of room.dungeons || []) {
+      if (d.turnTimer) clearTimeout(d.turnTimer);
+      if (d.monsterTimer) clearTimeout(d.monsterTimer);
     }
     rooms.delete(room.id);
     return { room: null, deleted: true, roomId: room.id };
@@ -215,11 +211,12 @@ function startGame(socketId) {
   }
   room.status = "playing";
   room.day = 1;
-  room.dungeon = idleDungeon();
+  room.dungeons = [];
   room.log = { type: "day", text: "Day 1 — the town stirs. Spend your stamina wisely." };
   for (const p of room.players) {
     rollStats(p);
     onNewDay(p);
+    p.dungeonId = null;
   }
   return room;
 }
@@ -233,9 +230,8 @@ function rebindSocket(oldSocketId, newSocketId) {
   socketToRoom.delete(oldSocketId);
   socketToRoom.set(newSocketId, room.id);
   if (room.hostId === oldSocketId) room.hostId = newSocketId;
-  const d = room.dungeon;
-  if (d && d.leaderId === oldSocketId) d.leaderId = newSocketId;
-  if (d) {
+  for (const d of room.dungeons || []) {
+    if (d.leaderId === oldSocketId) d.leaderId = newSocketId;
     d.memberIds = d.memberIds.map((id) => (id === oldSocketId ? newSocketId : id));
     d.turnOrder = (d.turnOrder || []).map((id) => (id === oldSocketId ? newSocketId : id));
     if (d.currentTurnId === oldSocketId) d.currentTurnId = newSocketId;
