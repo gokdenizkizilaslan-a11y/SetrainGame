@@ -255,12 +255,20 @@ $("chat-text").addEventListener("keydown", (e) => {
 });
 $("chat-toggle").addEventListener("click", toggleChat);
 
+
 // Go Back button (sticky, works on all overlay views)
 document.addEventListener("click", (e) => {
   const btn = e.target.closest(".go-back-btn");
   if (!btn) return;
   const target = btn.getAttribute("data-target");
   if (target === "town") {
+    // Eğer zindan parti bekleme odasındaysa sunucuya partiden ayrıldığını bildir:
+    const me = state.room && state.room.players.find((p) => p.id === state.playerId);
+    const myD = me && me.dungeonId && (state.room.dungeons || []).find((d) => d.id === me.dungeonId);
+    if (myD && myD.status === "forming") {
+      socket.emit("dungeon:leave");
+    }
+
     state.dungeonOpen = false;
     state.tavernOpen = false;
     state.blacksmithOpen = false;

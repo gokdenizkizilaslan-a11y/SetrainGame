@@ -790,9 +790,36 @@ function myDungeon(room) {
 
 function renderDungeonView(room) {
   const d = myDungeon(room);
-  if (!d || d.status === "idle") return renderDungeonMenu(room);
-  if (d.status === "forming") return renderDungeonParty(room);
-  if (d.status === "fighting" || d.status === "done") return renderCombat(room);
+  const container = $("dungeon-content");
+  if (!container) return;
+
+  // Savaş başladıysa veya bittiyse savaş ekranını çiz:
+  if (d && (d.status === "fighting" || d.status === "done")) {
+    container.className = "overlay-body no-scrollbar";
+    renderCombat(room, container);
+    return;
+  }
+
+  // Menüye geri dönüldüyse çift panelli yapıyı koru:
+  if (!container.classList.contains("dungeon-split-view")) {
+    container.className = "dungeon-split-view";
+    container.innerHTML = `
+      <div class="dungeon-list-section">
+        <div id="dungeon-list"></div>
+      </div>
+      <div class="dungeon-rooms-section">
+        <div class="dungeon-rooms-header">
+          <h3>Forming Parties</h3>
+        </div>
+        <div id="dungeon-rooms-list"></div>
+      </div>`;
+  }
+
+  if (!d || d.status === "idle") {
+    renderDungeonMenu(room);
+  } else if (d.status === "forming") {
+    renderDungeonParty(room);
+  }
 }
 
 function rarityMetaOf(r) {
