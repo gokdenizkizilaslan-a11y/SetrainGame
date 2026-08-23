@@ -191,6 +191,7 @@ document.querySelectorAll("[data-mode]").forEach((btn) => {
   btn.addEventListener("click", () => {
     state.mode = btn.getAttribute("data-mode");
     showScreen("screen-setup");
+    renderClassGrid(state.selectedClass, selectClass);
   });
 });
 
@@ -213,6 +214,7 @@ $("btn-continue").addEventListener("click", () => {
 
 $("btn-back-setup").addEventListener("click", () => {
   showScreen("screen-setup");
+  renderClassGrid(state.selectedClass, selectClass);
 });
 
 $("btn-create-room").addEventListener("click", () => {
@@ -448,6 +450,7 @@ socket.on("room:left", () => {
     $("room-list").innerHTML = "";
   } else {
     showScreen("screen-setup");
+    renderClassGrid(state.selectedClass, selectClass);
   }
 });
 
