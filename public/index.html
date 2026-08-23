@@ -125,15 +125,21 @@
           <div class="dashboard-grid">
             <aside id="profile-card" class="profile-card"></aside>
 
-            <div class="action-panel">
+            <div class="action-panel no-scrollbar">
               <div class="town-header">
                 <div>
                   <p class="eyebrow">The Town</p>
                   <h2>Setra Village</h2>
                 </div>
-                <div class="town-day">
-                  <span class="day-label">Day</span>
-                  <span id="town-day" class="day-value">1</span>
+                <div class="town-header-right">
+                  <button type="button" class="btn btn--ghost btn--icon" id="btn-boss-map" title="Boss Map">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span id="boss-map-badge" class="badge hidden">New</span>
+                  </button>
+                  <div class="town-day">
+                    <span class="day-label">Day</span>
+                    <span id="town-day" class="day-value">1</span>
+                  </div>
                 </div>
               </div>
 
@@ -143,6 +149,8 @@
               <div id="town-party" class="town-party"></div>
               <div id="town-log" class="town-log"></div>
             </div>
+
+            <aside id="party-panel" class="party-panel hidden no-scrollbar"></aside>
           </div>
         </div>
 
@@ -192,6 +200,14 @@
             <button type="button" class="btn btn--ghost" id="btn-temple-close">Back to Town</button>
           </div>
           <div id="temple-content"></div>
+        </div>
+
+        <div id="boss-view" class="overlay-view hidden">
+          <div class="overlay-head">
+            <p class="eyebrow">Boss Map</p>
+            <button type="button" class="btn btn--ghost" id="btn-boss-close">Back to Town</button>
+          </div>
+          <div id="boss-content"></div>
         </div>
       </div>
     </section>
@@ -268,6 +284,14 @@
           <button type="button" id="settings-close" class="btn btn--bronze">Close</button>
           <button type="button" id="settings-leave" class="btn btn--danger">Leave Game</button>
         </div>
+      </div>
+    </div>
+
+    <!-- Player Info Modal -->
+    <div id="player-info-overlay" class="player-info-overlay hidden" role="dialog" aria-modal="true">
+      <div class="player-info-card">
+        <div id="player-info-content"></div>
+        <button type="button" class="btn btn--bronze" id="btn-player-info-close">Close</button>
       </div>
     </div>
 

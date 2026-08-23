@@ -658,13 +658,13 @@ function renderProfileCard(room, selfId) {
     <div class="profile-stats">
       ${statRow("hp", "HP", `${me.maxHp}/${me.maxHp}`, "bar-hp", pct(me.maxHp, me.maxHp))}
       ${statRow("stamina", "Stamina", `${me.stamina}/${me.maxStamina}`, "bar-stamina", pct(me.stamina, me.maxStamina))}
+      ${statRow("xp", "XP", `${me.xp}/${me.xpToNext}`, "bar-xp", pct(me.xp, me.xpToNext))}
       ${statRow("gold", "Gold", me.gold)}
       ${statRow("wood", "Wood", me.wood)}
     </div>
     <div class="profile-chips">
       ${chip(icon("lives"), `Lives ${me.lives}`)}
       ${chip(icon("level"), `Lv ${me.level}`)}
-      ${chip(icon("xp"), `${me.xp}/${me.xpToNext} XP`)}
       ${chip(icon("atk"), `Atk ${me.attack}`)}
       ${chip(icon("mana"), `${me.maxMana}/${me.maxMana} Mana`)}
       ${chip(icon("mana"), `Regen ${me.manaRegen}`)}
@@ -812,20 +812,27 @@ function dungeonDrops(rank) {
 }
 
 function renderDungeonMenu(room, root) {
+  const sortedDungeons = [...CATALOG.dungeons].sort((a, b) => (a.displayOrder || 999) - (b.displayOrder || 999));
   root.innerHTML =
-    `<p class="lead">Choose a dungeon, then a size. Pick the same dungeon as a friend to join their party — otherwise it's your own solo delve.</p>` +
+    `<div class="dungeon-menu-header">
+      <p class="eyebrow">Dungeons</p>
+      <h2>Choose a Delve</h2>
+      <p class="lead">Pick a dungeon, then a size. Match a friend's choice to join their party — otherwise it's your own solo delve.</p>
+    </div>` +
     `<div class="dungeon-grid">` +
-    CATALOG.dungeons
+    sortedDungeons
       .map((dg) => {
         const top = [...dungeonDrops(dg.rank).odds].sort((a, b) => b.pct - a.pct).slice(0, 3);
         const hint = top
           .map((o) => `${escapeHtml(rarityMetaOf(o.rarity).label || o.rarity)} ${o.pct}%`)
           .join(" · ");
+        const isSpecial = dg.isSpecial;
         return `
-      <button type="button" class="dungeon-card" data-rank="${dg.rank}">
+      <button type="button" class="dungeon-card${isSpecial ? " dungeon-card--special" : ""}" data-rank="${dg.rank}">
         <span class="portrait portrait--dungeon dungeon-tile" data-img="${dg.image}" data-variant="dungeon"></span>
         <span class="dungeon-card-label">${escapeHtml(dg.label)}</span>
         <span class="dungeon-card-drops">${hint}</span>
+        ${isSpecial ? '<span class="dungeon-card-badge">Special</span>' : ''}
       </button>`;
       })
       .join("") +
@@ -1535,4 +1542,415 @@ function addChatMessage(msg) {
     body.removeChild(body.firstChild);
   }
   body.scrollTop = body.scrollHeight;
+}
+
+// ---- Party Panel (Multiplayer) ----
+
+function renderPartyPanel(room, selfId) {
+  const el = $("party-panel");
+  const otherPlayers = room.players.filter((p) => p.id !== selfId);
+  
+  if (!otherPlayers.length) {
+    el.classList.add("hidden");
+    return;
+  }
+  
+  el.classList.remove("hidden");
+  
+  el.innerHTML = `
+    <div class="party-panel-title">Party Members</div>
+    <div class="party-panel-list">
+      ${otherPlayers.map((p) => {
+        const frame = p.anomaly ? ` style="--frame:${p.anomaly.frameColor}"` : "";
+        return `
+        <button type="button" class="party-panel-card" data-player-id="${p.id}">
+          <span class="party-panel-avatar portrait portrait--${p.character}" data-img="${imgFor(p.character, "class")}" data-variant="${p.character}"${frame}></span>
+          <div class="party-panel-info">
+            <div class="party-panel-name">${escapeHtml(p.name)}${p.isHost ? ' <span class="badge badge--host">Host</span>' : ""}</div>
+            <div class="party-panel-class">${classLabel(p.character)} · Lv ${p.level}</div>
+          </div>
+          <div class="party-panel-stats">
+            <div class="party-panel-stat">${icon("hp")}<span>${p.hp}/${p.maxHp} HP</span></div>
+            <div class="party-panel-stat">${icon("stamina")}<span>${p.stamina}/${p.maxStamina} Stam</span></div>
+          </div>
+        </button>`;
+      }).join("")}
+    </div>
+  `;
+  
+  initImages(el);
+  
+  el.querySelectorAll(".party-panel-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      const playerId = card.getAttribute("data-player-id");
+      const player = room.players.find((p) => p.id === playerId);
+      if (player) showPlayerInfo(player, room);
+    });
+  });
+}
+
+function showPlayerInfo(player, room) {
+  const overlay = $("player-info-overlay");
+  const content = $("player-info-content");
+  const frame = player.anomaly ? ` style="border-color:${player.anomaly.frameColor}"` : "";
+  const anomalyFrameColor = player.anomaly ? player.anomaly.frameColor : "#e8b45c";
+  
+  const stats = [
+    { label: "HP", value: `${player.hp}/${player.maxHp}`, icon: "hp" },
+    { label: "Stamina", value: `${player.stamina}/${player.maxStamina}`, icon: "stamina" },
+    { label: "Level", value: player.level, icon: "level" },
+    { label: "XP", value: `${player.xp}/${player.xpToNext}`, icon: "xp" },
+    { label: "Attack", value: player.attack, icon: "atk" },
+    { label: "Resistance", value: player.resistance, icon: "res" },
+    { label: "Magic Power", value: player.magicPower, icon: "magic" },
+    { label: "Heal Power", value: player.healPower, icon: "heal" },
+    { label: "Speed", value: player.speed, icon: "level" },
+    { label: "Crit Chance", value: `${player.critChance}%`, icon: "crit" },
+    { label: "Crit Damage", value: `+${player.critDamage}%`, icon: "crit" },
+    { label: "Mana", value: `${player.mana}/${player.maxMana}`, icon: "mana" },
+    { label: "Mana Regen", value: player.manaRegen, icon: "mana" },
+    { label: "Gold", value: player.gold, icon: "gold" },
+    { label: "Wood", value: player.wood, icon: "wood" },
+    { label: "Food", value: player.food, icon: "food" },
+    { label: "Lives", value: `${player.lives}/3`, icon: "lives" },
+  ];
+  
+  const equipSlots = (CATALOG.equipmentSlots || []).map((slot) => {
+    const itemId = player.equipment?.[slot.id];
+    const item = itemId ? CATALOG.items.find((x) => x.id === itemId) : null;
+    return `
+      <div class="player-info-equip-slot">
+        <div class="player-info-equip-label">${escapeHtml(slot.label)}</div>
+        <div class="player-info-equip-item">${item ? escapeHtml(item.name) : '<span class="muted">Empty</span>'}</div>
+      </div>`;
+  }).join("");
+  
+  const anomalyHtml = player.anomaly ? `
+    <div class="player-info-anomaly">
+      <div class="player-info-anomaly-frame" style="border-color:${player.anomaly.frameColor}; background-image:url('${imgFor(player.character, "class")}')"></div>
+      <div class="player-info-anomaly-details">
+        <div class="player-info-anomaly-name" style="color:${player.anomaly.frameColor}">${escapeHtml(player.anomaly.name)}</div>
+        <div class="player-info-anomaly-desc">${escapeHtml(player.anomaly.description)}</div>
+      </div>
+    </div>` : `<div class="player-info-anomaly"><div class="muted">No anomaly</div></div>`;
+  
+  content.innerHTML = `
+    <div class="player-info-header">
+      <span class="player-info-avatar portrait portrait--${player.character}" data-img="${imgFor(player.character, "class")}" data-variant="${player.character}"${frame}></span>
+      <div>
+        <div class="player-info-name">${escapeHtml(player.name)}${player.isHost ? ' <span class="badge badge--host">Host</span>' : ""}</div>
+        <div class="player-info-class">${classLabel(player.character)} · Level ${player.level}</div>
+      </div>
+    </div>
+    <div class="player-info-section">
+      <div class="player-info-section-title">Stats</div>
+      <div class="player-info-stats">
+        ${stats.map((s) => `
+          <div class="player-info-stat">
+            <div class="player-info-stat-label">${escapeHtml(s.label)}</div>
+            <div class="player-info-stat-value">${escapeHtml(String(s.value))}</div>
+          </div>`).join("")}
+      </div>
+    </div>
+    <div class="player-info-section">
+      <div class="player-info-section-title">Anomaly</div>
+      ${anomalyHtml}
+    </div>
+    <div class="player-info-section">
+      <div class="player-info-section-title">Equipment</div>
+      <div class="player-info-equipment">${equipSlots}</div>
+    </div>
+  `;
+  
+  initImages(content);
+  overlay.classList.remove("hidden");
+  
+  const closeBtn = overlay.querySelector("#btn-player-info-close");
+  const closeHandler = () => {
+    overlay.classList.add("hidden");
+    closeBtn.removeEventListener("click", closeHandler);
+    overlay.removeEventListener("click", overlayClickHandler);
+  };
+  const overlayClickHandler = (e) => {
+    if (e.target === overlay) closeHandler();
+  };
+  closeBtn.addEventListener("click", closeHandler);
+  overlay.addEventListener("click", overlayClickHandler);
+}
+
+// ---- Boss Map ----
+
+function renderBossView(room) {
+  const me = room.players.find((p) => p.id === state.playerId);
+  const root = $("boss-content");
+  if (!me) {
+    root.innerHTML = "";
+    return;
+  }
+  
+  const bosses = CATALOG.bosses || [];
+  const availableBosses = bosses.filter((b) => me.level >= b.minLevel);
+  const nextBoss = bosses.find((b) => me.level < b.minLevel);
+  
+  root.innerHTML = `
+    <div class="boss-map-container">
+      <div class="boss-map-wrapper" id="boss-map-wrapper">
+        <div class="boss-map-bg" id="boss-map-bg"></div>
+        <div class="boss-path" id="boss-path"></div>
+        ${bosses.map((boss, index) => {
+          const isUnlocked = me.level >= boss.minLevel;
+          const isAvailable = availableBosses.includes(boss);
+          const isNext = nextBoss && nextBoss.id === boss.id;
+          const progress = isUnlocked ? 100 : Math.min(100, Math.round((me.level / boss.minLevel) * 100));
+          return `
+          <button type="button" 
+            class="boss-node${isUnlocked ? " boss-node--unlocked" : " boss-node--locked"}${isNext ? " boss-node--next" : ""}"
+            data-boss-id="${boss.id}"
+            style="left: ${boss.position.x}%; top: ${boss.position.y}%;"
+            ${!isUnlocked ? "disabled" : ""}>
+            <div class="boss-node-inner">
+              <span class="boss-node-icon">${isUnlocked ? "⚔" : "🔒"}</span>
+              <span class="boss-node-name">${escapeHtml(boss.name)}</span>
+              <span class="boss-node-level">Lv ${boss.minLevel}+</span>
+            </div>
+            ${isNext ? '<span class="boss-node-pulse"></span>' : ''}
+          </button>`;
+        }).join("")}
+      </div>
+      <div class="boss-map-controls">
+        <button type="button" class="btn btn--mini" id="btn-map-zoom-in" title="Zoom In">+</button>
+        <button type="button" class="btn btn--mini" id="btn-map-zoom-out" title="Zoom Out">−</button>
+        <button type="button" class="btn btn--mini" id="btn-map-reset" title="Reset View">⌂</button>
+      </div>
+    </div>
+    <div class="boss-detail-panel" id="boss-detail-panel">
+      <div class="boss-detail-placeholder">
+        <p class="muted">Select a boss to view details</p>
+      </div>
+    </div>`;
+  
+  setupBossMapInteractions(root, me, bosses);
+}
+
+function setupBossMapInteractions(root, me, bosses) {
+  const wrapper = root.querySelector("#boss-map-wrapper");
+  const detailPanel = root.querySelector("#boss-detail-panel");
+  let scale = 1;
+  let translateX = 0;
+  let translateY = 0;
+  let isDragging = false;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  
+  function updateTransform() {
+    wrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+  }
+  
+  function showBossDetail(boss) {
+    const isUnlocked = me.level >= boss.minLevel;
+    const rewards = boss.rewards || {};
+    detailPanel.innerHTML = `
+      <div class="boss-detail-card">
+        <div class="boss-detail-header" style="border-color: ${getElementColor(boss.element)}">
+          <span class="boss-detail-icon">${isUnlocked ? "⚔" : "🔒"}</span>
+          <div>
+            <div class="boss-detail-name">${escapeHtml(boss.name)}</div>
+            <div class="boss-detail-title">${escapeHtml(boss.title)}</div>
+          </div>
+          <span class="boss-detail-level">Min Level: ${boss.minLevel} · Rec: ${boss.recommendedLevel}</span>
+        </div>
+        <div class="boss-detail-image" style="background-image: url('${boss.image}')"></div>
+        <div class="boss-detail-description">${escapeHtml(boss.description)}</div>
+        <div class="boss-detail-stats">
+          <div class="boss-stat-row">
+            <div class="boss-stat">${icon("hp")}<span>HP: ${boss.hp.toLocaleString()}</span></div>
+            <div class="boss-stat">${icon("atk")}<span>Atk: ${boss.attack}</span></div>
+            <div class="boss-stat">${icon("res")}<span>Res: ${boss.resistance}</span></div>
+            <div class="boss-stat">${icon("magic")}<span>Mgc: ${boss.magicPower}</span></div>
+            <div class="boss-stat">${icon("level")}<span>Spd: ${boss.speed}</span></div>
+          </div>
+          <div class="boss-element">Element: <strong style="color: ${getElementColor(boss.element)}">${escapeHtml(boss.element)}</strong></div>
+        </div>
+        <div class="boss-detail-skills">
+          <div class="boss-detail-section-title">Special Abilities</div>
+          <div class="boss-skills-list">
+            ${(boss.skills || []).map((skillId) => {
+              const skill = CATALOG.skills.find((s) => s.id === skillId);
+              return skill ? `
+                <div class="boss-skill">
+                  <span class="boss-skill-icon" data-img="${skill.image}"></span>
+                  <div>
+                    <div class="boss-skill-name">${escapeHtml(skill.name)}</div>
+                    <div class="boss-skill-desc">${escapeHtml(skill.description)}</div>
+                  </div>
+                </div>` : "";
+            }).join("")}
+          </div>
+        </div>
+        <div class="boss-detail-rewards">
+          <div class="boss-detail-section-title">Rewards</div>
+          <div class="boss-rewards-list">
+            <div class="boss-reward-row">
+              <span class="boss-reward-label">Gold</span>
+              <span class="boss-reward-value">${icon("gold")} ${rewards.gold?.toLocaleString() || 0}</span>
+            </div>
+            <div class="boss-reward-row">
+              <span class="boss-reward-label">XP</span>
+              <span class="boss-reward-value">${icon("xp")} ${rewards.xp?.toLocaleString() || 0}</span>
+            </div>
+            ${rewards.guaranteedDrop ? `
+              <div class="boss-reward-row boss-reward--guaranteed">
+                <span class="boss-reward-label">Guaranteed</span>
+                <span class="boss-reward-value">${escapeHtml(rewards.guaranteedDrop)}</span>
+              </div>` : ""}
+            ${rewards.possibleDrops ? `
+              <div class="boss-reward-row">
+                <span class="boss-reward-label">Possible</span>
+                <span class="boss-reward-value">${rewards.possibleDrops.map((d) => escapeHtml(d)).join(", ")}</span>
+              </div>` : ""}
+          </div>
+        </div>
+        ${isUnlocked ? `
+          <button type="button" class="btn btn--gold btn--boss-challenge" data-boss-id="${boss.id}">
+            Challenge ${escapeHtml(boss.name)}
+          </button>` : `
+          <div class="boss-locked-notice">
+            <p>Reach level ${boss.minLevel} to challenge this boss.</p>
+            <div class="boss-progress-bar">
+              <div class="boss-progress-fill" style="width: ${Math.min(100, Math.round((me.level / boss.minLevel) * 100))}%"></div>
+            </div>
+            <p class="muted">Progress: ${me.level} / ${boss.minLevel}</p>
+          </div>`}
+      </div>`;
+    
+    initImages(detailPanel);
+    
+    const challengeBtn = detailPanel.querySelector(".btn--boss-challenge");
+    if (challengeBtn) {
+      challengeBtn.addEventListener("click", () => {
+        sfxPlay("clicksound");
+        socket.emit("boss:challenge", { bossId: challengeBtn.getAttribute("data-boss-id") });
+      });
+    }
+  }
+  
+  root.querySelectorAll(".boss-node").forEach((node) => {
+    node.addEventListener("click", () => {
+      const bossId = node.getAttribute("data-boss-id");
+      const boss = bosses.find((b) => b.id === bossId);
+      if (boss) showBossDetail(boss);
+    });
+  });
+  
+  // Zoom controls
+  root.querySelector("#btn-map-zoom-in").addEventListener("click", () => {
+    scale = Math.min(3, scale + 0.25);
+    updateTransform();
+  });
+  
+  root.querySelector("#btn-map-zoom-out").addEventListener("click", () => {
+    scale = Math.max(0.5, scale - 0.25);
+    updateTransform();
+  });
+  
+  root.querySelector("#btn-map-reset").addEventListener("click", () => {
+    scale = 1;
+    translateX = 0;
+    translateY = 0;
+    updateTransform();
+  });
+  
+  // Pan with mouse drag
+  wrapper.addEventListener("mousedown", (e) => {
+    if (e.target.closest(".boss-node")) return;
+    isDragging = true;
+    dragStartX = e.clientX - translateX;
+    dragStartY = e.clientY - translateY;
+    wrapper.style.cursor = "grabbing";
+  });
+  
+  document.addEventListener("mousemove", (e) => {
+    if (!isDragging) return;
+    translateX = e.clientX - dragStartX;
+    translateY = e.clientY - dragStartY;
+    updateTransform();
+  });
+  
+  document.addEventListener("mouseup", () => {
+    if (isDragging) {
+      isDragging = false;
+      wrapper.style.cursor = "grab";
+    }
+  });
+  
+  // Wheel zoom
+  wrapper.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    scale = Math.max(0.5, Math.min(3, scale + delta));
+    updateTransform();
+  }, { passive: false });
+  
+  // Touch support
+  let lastTouchDist = 0;
+  wrapper.addEventListener("touchstart", (e) => {
+    if (e.target.closest(".boss-node")) return;
+    if (e.touches.length === 1) {
+      isDragging = true;
+      dragStartX = e.touches[0].clientX - translateX;
+      dragStartY = e.touches[0].clientY - translateY;
+    } else if (e.touches.length === 2) {
+      lastTouchDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+    }
+  }, { passive: true });
+  
+  wrapper.addEventListener("touchmove", (e) => {
+    if (e.touches.length === 1 && isDragging) {
+      e.preventDefault();
+      translateX = e.touches[0].clientX - dragStartX;
+      translateY = e.touches[0].clientY - dragStartY;
+      updateTransform();
+    } else if (e.touches.length === 2) {
+      e.preventDefault();
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      if (lastTouchDist > 0) {
+        scale = Math.max(0.5, Math.min(3, scale * (dist / lastTouchDist)));
+        lastTouchDist = dist;
+        updateTransform();
+      }
+    }
+  }, { passive: false });
+  
+  wrapper.addEventListener("touchend", () => {
+    isDragging = false;
+  });
+  
+  // Show first unlocked boss by default
+  const firstUnlocked = root.querySelector(".boss-node--unlocked");
+  if (firstUnlocked) {
+    const bossId = firstUnlocked.getAttribute("data-boss-id");
+    const boss = bosses.find((b) => b.id === bossId);
+    if (boss) showBossDetail(boss);
+  } else if (bosses.length > 0) {
+    showBossDetail(bosses[0]);
+  }
+}
+
+function getElementColor(element) {
+  const colors = {
+    physical: "#e8b45c",
+    fire: "#e85d2a",
+    frost: "#4aa3d6",
+    arcane: "#b07fe8",
+    shadow: "#c45c6a",
+    holy: "#f4e6a8",
+    nature: "#6fbf6a"
+  };
+  return colors[element] || "#e8b45c";
 }

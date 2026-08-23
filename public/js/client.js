@@ -13,6 +13,7 @@ const state = {
   merchantOpen: false,
   templeOpen: false,
   inventoryOpen: false,
+  bossOpen: false,
   timerDeadline: null,
   timerReset: false,
   timerFired: false,
@@ -114,7 +115,7 @@ function renderTown(room) {
     showNotice("day", `Day ${room.day}`, slept ? "You slept through the night. Stamina is restored." : "A new day dawns. Stamina is restored.");
   }
 
-  const inOverlay = state.dungeonOpen || state.tavernOpen || state.blacksmithOpen || state.merchantOpen || state.templeOpen || state.inventoryOpen;
+  const inOverlay = state.dungeonOpen || state.tavernOpen || state.blacksmithOpen || state.merchantOpen || state.templeOpen || state.inventoryOpen || state.bossOpen;
   $("town-main").classList.toggle("hidden", inOverlay);
   $("dungeon-view").classList.toggle("hidden", !state.dungeonOpen);
   $("tavern-view").classList.toggle("hidden", !state.tavernOpen);
@@ -122,6 +123,8 @@ function renderTown(room) {
   $("merchant-view").classList.toggle("hidden", !state.merchantOpen);
   $("temple-view").classList.toggle("hidden", !state.templeOpen);
   $("inventory-view").classList.toggle("hidden", !state.inventoryOpen);
+  $("boss-view").classList.toggle("hidden", !state.bossOpen);
+  $("party-panel").classList.toggle("hidden", inOverlay || room.players.length <= 1);
 
   if (!inOverlay) {
     $("town-day").textContent = room.day;
@@ -129,6 +132,7 @@ function renderTown(room) {
     renderActionCards(room, state.playerId);
     renderTownParty(room);
     renderTownLog(room);
+    renderPartyPanel(room, state.playerId);
   } else if (state.dungeonOpen) {
     renderDungeonView(room);
   } else if (state.tavernOpen) {
@@ -141,6 +145,8 @@ function renderTown(room) {
     renderTempleView(room);
   } else if (state.inventoryOpen) {
     renderInventory(room);
+  } else if (state.bossOpen) {
+    renderBossView(room);
   }
 }
 
@@ -263,6 +269,16 @@ $("btn-inventory-close").addEventListener("click", () => {
   renderTown(state.room);
 });
 
+$("btn-boss-map").addEventListener("click", () => {
+  state.bossOpen = true;
+  renderTown(state.room);
+});
+
+$("btn-boss-close").addEventListener("click", () => {
+  state.bossOpen = false;
+  renderTown(state.room);
+});
+
 $("chat-send").addEventListener("click", sendChat);
 $("chat-text").addEventListener("keydown", (e) => {
   if (e.key === "Enter") sendChat();
@@ -281,6 +297,7 @@ function leaveToMainMenu() {
   state.merchantOpen = false;
   state.templeOpen = false;
   state.inventoryOpen = false;
+  state.bossOpen = false;
   state.pendingFx = [];
   stopCombatTimer();
   $("settings-overlay").classList.add("hidden");
@@ -401,6 +418,7 @@ socket.on("room:left", () => {
   state.merchantOpen = false;
   state.templeOpen = false;
   state.inventoryOpen = false;
+  state.bossOpen = false;
   state.pendingFx = [];
   stopCombatTimer();
   $("chat").classList.add("hidden");
@@ -471,6 +489,7 @@ socket.on("session:expired", () => {
   state.merchantOpen = false;
   state.templeOpen = false;
   state.inventoryOpen = false;
+  state.bossOpen = false;
   state.pendingFx = [];
   stopCombatTimer();
   $("chat").classList.add("hidden");

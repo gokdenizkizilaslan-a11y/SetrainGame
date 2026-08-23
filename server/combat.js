@@ -104,10 +104,36 @@ function applyBuffs(room, d, actor, actorName, skill, targetType, targetIds, act
     ? new Set(["weaken", "expose", "dot"])
     : new Set(["attack", "defense", "regen", "weaken", "expose", "dot"]);
   const turns = Math.max(1, Math.round(skill.duration || 1));
+  const maxStacks = skill.maxStacks || 999;
   let applied = false;
   for (const tid of targetIds) {
     for (const e of entries) {
       if (!allowed.has(e.kind)) continue;
+      
+      // Check for existing buff from same skill (for maxStacks: 1 behavior)
+      if (maxStacks === 1) {
+        const existingIdx = d.buffs.findIndex(
+          (b) => b.targetType === targetType && b.targetId === tid && b.kind === e.kind && b.skillId === skill.id
+        );
+        if (existingIdx !== -1) {
+          // Refresh duration instead of stacking
+          d.buffs[existingIdx].turns = turns;
+          d.buffs[existingIdx].value = e.value; // Update value in case it changed
+          addFx(d, {
+            type: "buff",
+            actor: actor.id,
+            target: targetType === "player" ? "player" : "enemy",
+            targetId: targetType === "player" ? tid : Number(tid),
+            kind: e.kind,
+            value: e.value,
+            turns,
+            skill: skill.id,
+          });
+          applied = true;
+          continue;
+        }
+      }
+      
       d.buffId = (d.buffId || 0) + 1;
       d.buffs.push({
         uid: d.buffId,

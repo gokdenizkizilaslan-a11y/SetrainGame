@@ -2223,6 +2223,7 @@ const CONTENT = {
       "monsterCount": 2,
       "monsterPower": 1,
       "sizeProfile": "more",
+      "displayOrder": 1,
       "loot": {
         "legendary": 0.5,
         "epic": 1.5,
@@ -2251,6 +2252,7 @@ const CONTENT = {
       "monsterCount": 2,
       "monsterPower": 1.3,
       "sizeProfile": "more",
+      "displayOrder": 3,
       "loot": {
         "legendary": 1,
         "epic": 3,
@@ -2279,6 +2281,7 @@ const CONTENT = {
       "monsterCount": 3,
       "monsterPower": 1.6,
       "sizeProfile": "more",
+      "displayOrder": 2,
       "loot": {
         "legendary": 2,
         "epic": 5,
@@ -2307,6 +2310,7 @@ const CONTENT = {
       "monsterCount": 3,
       "monsterPower": 2,
       "sizeProfile": "more",
+      "displayOrder": 4,
       "loot": {
         "legendary": 3.5,
         "epic": 8,
@@ -2334,6 +2338,7 @@ const CONTENT = {
       "monsterCount": 3,
       "monsterPower": 2.6,
       "sizeProfile": "more",
+      "displayOrder": 5,
       "loot": {
         "legendary": 6,
         "epic": 12,
@@ -2361,6 +2366,7 @@ const CONTENT = {
       "monsterCount": 4,
       "monsterPower": 3.3,
       "sizeProfile": "fewerStronger",
+      "displayOrder": 6,
       "loot": {
         "legendary": 10,
         "epic": 18,
@@ -2388,6 +2394,7 @@ const CONTENT = {
       "monsterCount": 4,
       "monsterPower": 4.2,
       "sizeProfile": "fewerStronger",
+      "displayOrder": 7,
       "loot": {
         "legendary": 14,
         "epic": 24,
@@ -2414,6 +2421,7 @@ const CONTENT = {
       "monsterCount": 5,
       "monsterPower": 5.5,
       "sizeProfile": "fewerStronger",
+      "displayOrder": 8,
       "loot": {
         "legendary": 18,
         "epic": 30,
@@ -2439,12 +2447,305 @@ const CONTENT = {
       "monsterCount": 1,
       "monsterPower": 1,
       "sizeProfile": "more",
+      "displayOrder": 9,
       "loot": {
         "legendary": 0.8,
         "epic": 2,
         "mythic": 0.3,
         "remnant": 0.06
       }
+    },
+    {
+      "rank": "ssr",
+      "label": "SSR Dungeon",
+      "image": "/images/dungeons/ssr.png",
+      "stamina": 6,
+      "xpReward": 800,
+      "goldScale": 3.5,
+      "woodScale": 2.5,
+      "goldBase": 800,
+      "woodBase": 400,
+      "monsterPool": [
+        "hydra",
+        "lich",
+        "ancient_golem",
+        "wyvern",
+        "dark_knight",
+        "witch"
+      ],
+      "monsterCount": 6,
+      "monsterPower": 8.0,
+      "sizeProfile": "fewerStronger",
+      "displayOrder": 10,
+      "loot": {
+        "legendary": 30,
+        "epic": 50,
+        "mythic": 25,
+        "remnant": 5,
+        "ancient_relic": 1
+      }
+    },
+    {
+      "rank": "special_golem_hideout",
+      "label": "The Hideout of Great Golem",
+      "image": "/images/dungeons/special_golem.png",
+      "stamina": 3,
+      "xpReward": 120,
+      "goldScale": 0.8,
+      "woodScale": 1.2,
+      "goldBase": 100,
+      "woodBase": 80,
+      "monsterPool": [
+        "golem",
+        "stone_warden",
+        "ancient_golem"
+      ],
+      "monsterCount": 3,
+      "monsterPower": 1.5,
+      "sizeProfile": "more",
+      "displayOrder": 11,
+      "loot": {
+        "legendary": 2,
+        "epic": 5,
+        "mythic": 1,
+        "remnant": 0.2
+      },
+      "isSpecial": true,
+      "specialType": "golem",
+      "boss": "golem_king"
+    },
+    {
+      "rank": "special_ancient_forest",
+      "label": "Ancient Forest Sanctuary",
+      "image": "/images/dungeons/special_forest.png",
+      "stamina": 3,
+      "xpReward": 130,
+      "goldScale": 0.9,
+      "woodScale": 1.5,
+      "goldBase": 110,
+      "woodBase": 100,
+      "monsterPool": [
+        "grove_sprite",
+        "thorn_viper",
+        "griffin"
+      ],
+      "monsterCount": 3,
+      "monsterPower": 1.8,
+      "sizeProfile": "more",
+      "displayOrder": 12,
+      "loot": {
+        "legendary": 2.5,
+        "epic": 6,
+        "mythic": 1.2,
+        "remnant": 0.25
+      },
+      "isSpecial": true,
+      "specialType": "nature",
+      "boss": "forest_guardian"
+    },
+    {
+      "rank": "special_cursed_crypt",
+      "label": "Cursed Crypt of Shadows",
+      "image": "/images/dungeons/special_crypt.png",
+      "stamina": 4,
+      "xpReward": 180,
+      "goldScale": 1.2,
+      "woodScale": 0.8,
+      "goldBase": 150,
+      "woodBase": 60,
+      "monsterPool": [
+        "wraith",
+        "skeleton",
+        "dark_knight"
+      ],
+      "monsterCount": 4,
+      "monsterPower": 2.2,
+      "sizeProfile": "fewerStronger",
+      "displayOrder": 13,
+      "loot": {
+        "legendary": 4,
+        "epic": 10,
+        "mythic": 2,
+        "remnant": 0.4
+      },
+      "isSpecial": true,
+      "specialType": "shadow",
+      "boss": "shadow_lord"
+    },
+    {
+      "rank": "special_volcanic_core",
+      "label": "Volcanic Core",
+      "image": "/images/dungeons/special_volcano.png",
+      "stamina": 4,
+      "xpReward": 220,
+      "goldScale": 1.5,
+      "woodScale": 1.0,
+      "goldBase": 200,
+      "woodBase": 90,
+      "monsterPool": [
+        "manticore",
+        "wyvern",
+        "ogre"
+      ],
+      "monsterCount": 4,
+      "monsterPower": 2.8,
+      "sizeProfile": "fewerStronger",
+      "displayOrder": 14,
+      "loot": {
+        "legendary": 6,
+        "epic": 14,
+        "mythic": 3.5,
+        "remnant": 0.6
+      },
+      "isSpecial": true,
+      "specialType": "fire",
+      "boss": "fire_titan"
+    },
+    {
+      "rank": "special_crystal_cavern",
+      "label": "Crystal Cavern of Echoes",
+      "image": "/images/dungeons/special_crystal.png",
+      "stamina": 5,
+      "xpReward": 300,
+      "goldScale": 2.0,
+      "woodScale": 1.3,
+      "goldBase": 300,
+      "woodBase": 130,
+      "monsterPool": [
+        "witch",
+        "lich",
+        "ancient_golem"
+      ],
+      "monsterCount": 5,
+      "monsterPower": 3.5,
+      "sizeProfile": "fewerStronger",
+      "displayOrder": 15,
+      "loot": {
+        "legendary": 10,
+        "epic": 20,
+        "mythic": 6,
+        "remnant": 1.0
+      },
+      "isSpecial": true,
+      "specialType": "arcane",
+      "boss": "crystal_archon"
+    }
+  ],
+  "bosses": [
+    {
+      "id": "boss1",
+      "name": "The First Guardian",
+      "title": "Warden of the Forgotten Ruins",
+      "minLevel": 10,
+      "recommendedLevel": 15,
+      "image": "/images/bosses/boss1.png",
+      "hp": 5000,
+      "attack": 80,
+      "resistance": 40,
+      "magicPower": 30,
+      "speed": 8,
+      "element": "physical",
+      "skills": ["crushing_blow", "seismic_slam", "iron_will"],
+      "description": "An ancient construct that guards the entrance to the deeper ruins. Its stone fists can shatter bedrock.",
+      "rewards": {
+        "gold": 500,
+        "xp": 1000,
+        "guaranteedDrop": "ancient_relic",
+        "possibleDrops": ["guardian_core", "stone_heart", "ruin_key"]
+      },
+      "position": { x: 15, y: 25 }
+    },
+    {
+      "id": "boss2",
+      "name": "Twin Serpents",
+      "title": "Coiled Corruption",
+      "minLevel": 20,
+      "recommendedLevel": 25,
+      "image": "/images/bosses/boss2.png",
+      "hp": 8000,
+      "attack": 110,
+      "resistance": 50,
+      "magicPower": 60,
+      "speed": 12,
+      "element": "shadow",
+      "skills": ["venomous_bite", "coil_crush", "shadow_veil", "twin_strike"],
+      "description": "Two massive serpents that share a single corrupt soul. They strike in perfect unison, weaving shadows around their coils.",
+      "rewards": {
+        "gold": 1000,
+        "xp": 2500,
+        "guaranteedDrop": "serpent_fang",
+        "possibleDrops": ["venom_sac", "shadow_scale", "twin_essence"]
+      },
+      "position": { x: 35, y: 45 }
+    },
+    {
+      "id": "boss3",
+      "name": "Ancient Lich King",
+      "title": "Master of Undeath",
+      "minLevel": 30,
+      "recommendedLevel": 35,
+      "image": "/images/bosses/boss3.png",
+      "hp": 12000,
+      "attack": 90,
+      "resistance": 60,
+      "magicPower": 120,
+      "speed": 7,
+      "element": "arcane",
+      "skills": ["death_bolt", "raise_undead", "soul_drain", "arcane_barrier", "lich_dominion"],
+      "description": "A centuries-old lich who has mastered the forbidden arts. His phylactery is hidden deep within his citadel.",
+      "rewards": {
+        "gold": 2000,
+        "xp": 5000,
+        "guaranteedDrop": "lich_phylactery",
+        "possibleDrops": ["death_crown", "soul_gem", "ancient_tome"]
+      },
+      "position": { x: 55, y: 20 }
+    },
+    {
+      "id": "boss4",
+      "name": "Void Walker",
+      "title": "Harbinger of Nothingness",
+      "minLevel": 40,
+      "recommendedLevel": 45,
+      "image": "/images/bosses/boss4.png",
+      "hp": 18000,
+      "attack": 140,
+      "resistance": 70,
+      "magicPower": 100,
+      "speed": 15,
+      "element": "shadow",
+      "skills": ["void_step", "reality_tear", "null_field", "entropy_wave", "dimensional_shift"],
+      "description": "A being from beyond the veil, walking between dimensions. Its presence warps reality itself.",
+      "rewards": {
+        "gold": 4000,
+        "xp": 10000,
+        "guaranteedDrop": "void_essence",
+        "possibleDrops": ["reality_shard", "null_crystal", "walker_cloak"]
+      },
+      "position": { x: 75, y: 60 }
+    },
+    {
+      "id": "boss5",
+      "name": "Setra's Fallen Champion",
+      "title": "The Betrayed King",
+      "minLevel": 50,
+      "recommendedLevel": 55,
+      "image": "/images/bosses/boss5.png",
+      "hp": 25000,
+      "attack": 180,
+      "resistance": 90,
+      "magicPower": 150,
+      "speed": 18,
+      "element": "holy",
+      "skills": ["divine_judgment", "radiant_slash", "kingdom_shield", "fallen_wrath", "setras_legacy", "final_stand"],
+      "description": "The first king of Setra, corrupted by his own hubris. He wields the very light he once swore to protect.",
+      "rewards": {
+        "gold": 10000,
+        "xp": 25000,
+        "guaranteedDrop": "setras_crown",
+        "possibleDrops": ["fallen_blade", "kings_armor", "divine_heart", "legacy_seal"]
+      },
+      "position": { x: 90, y: 85 }
     }
   ],
   "items": [
@@ -4060,6 +4361,19 @@ const CONTENT = {
       "amount": 0.15,
       "monster": true,
       "description": "The monster restores 15% of max HP."
+    },
+    {
+      "id": "battle_rage",
+      "name": "Battle Rage",
+      "target": "self",
+      "mana": 8,
+      "buffs": [
+        { "kind": "attack", "value": 20 }
+      ],
+      "duration": 3,
+      "maxStacks": 1,
+      "image": "/images/skills/battle_rage.png",
+      "description": "Gain +20 Attack for 3 rounds. Refreshes duration if used again. Does not stack."
     }
   ]
 };
