@@ -10,6 +10,7 @@ const state = {
   dungeonOpen: false,
   tavernOpen: false,
   blacksmithOpen: false,
+  merchantOpen: false,
   templeOpen: false,
   inventoryOpen: false,
   timerDeadline: null,
@@ -100,18 +101,25 @@ function renderTown(room) {
     state.justSlept = false;
     showToast("💤 You slept. Stamina returns at dawn.");
   }
+  if (me && room.log && room.log.type === "temple" && room.log.name === me.name && state.templeNoticeKey !== room.log.ts) {
+    state.templeNoticeKey = room.log.ts;
+    sfxPlay("neutralascension");
+    showNotice("temple", "Ascension", room.log.text);
+  }
   if (me && room.log && room.log.type === "day" && state.dayNoticeKey !== room.log.ts) {
     state.dayNoticeKey = room.log.ts;
     const slept = state.justSlept;
     state.justSlept = false;
+    sfxPlay("aftersleepnewdaysound");
     showNotice("day", `Day ${room.day}`, slept ? "You slept through the night. Stamina is restored." : "A new day dawns. Stamina is restored.");
   }
 
-  const inOverlay = state.dungeonOpen || state.tavernOpen || state.blacksmithOpen || state.templeOpen || state.inventoryOpen;
+  const inOverlay = state.dungeonOpen || state.tavernOpen || state.blacksmithOpen || state.merchantOpen || state.templeOpen || state.inventoryOpen;
   $("town-main").classList.toggle("hidden", inOverlay);
   $("dungeon-view").classList.toggle("hidden", !state.dungeonOpen);
   $("tavern-view").classList.toggle("hidden", !state.tavernOpen);
   $("blacksmith-view").classList.toggle("hidden", !state.blacksmithOpen);
+  $("merchant-view").classList.toggle("hidden", !state.merchantOpen);
   $("temple-view").classList.toggle("hidden", !state.templeOpen);
   $("inventory-view").classList.toggle("hidden", !state.inventoryOpen);
 
@@ -127,6 +135,8 @@ function renderTown(room) {
     renderTavernView(room);
   } else if (state.blacksmithOpen) {
     renderBlacksmithView(room);
+  } else if (state.merchantOpen) {
+    renderMerchantView(room);
   } else if (state.templeOpen) {
     renderTempleView(room);
   } else if (state.inventoryOpen) {
@@ -238,6 +248,11 @@ $("btn-blacksmith-close").addEventListener("click", () => {
   renderTown(state.room);
 });
 
+$("btn-merchant-close").addEventListener("click", () => {
+  state.merchantOpen = false;
+  renderTown(state.room);
+});
+
 $("btn-temple-close").addEventListener("click", () => {
   state.templeOpen = false;
   renderTown(state.room);
@@ -263,13 +278,37 @@ function leaveToMainMenu() {
   state.dungeonOpen = false;
   state.tavernOpen = false;
   state.blacksmithOpen = false;
+  state.merchantOpen = false;
   state.templeOpen = false;
   state.inventoryOpen = false;
   state.pendingFx = [];
   stopCombatTimer();
+  $("settings-overlay").classList.add("hidden");
   $("chat").classList.add("hidden");
   showScreen("screen-mode");
   socket.emit("room:leave");
+}
+
+function updateSettingsToggles() {
+  const mt = $("settings-music-toggle");
+  const st = $("settings-sfx-toggle");
+  if (mt) mt.textContent = music.playing ? "Music: On" : "Music: Off";
+  if (st) st.textContent = sfxEnabled ? "SFX: On" : "SFX: Off";
+}
+
+function openSettings() {
+  $("settings-music-volume").value = Math.round(($("music-audio").volume || 0.7) * 100);
+  $("settings-sfx-volume").value = sfxVolume;
+  updateSettingsToggles();
+  stopCombatTimer();
+  $("settings-overlay").classList.remove("hidden");
+}
+
+function closeSettings() {
+  $("settings-overlay").classList.add("hidden");
+  if (state.room && state.room.status === "playing") {
+    renderTown(state.room);
+  }
 }
 
 function updateSoundButton(on) {
@@ -279,7 +318,34 @@ function updateSoundButton(on) {
   btn.title = on ? "Toggle sound effects" : "Toggle sound effects (currently off)";
 }
 
-$("btn-main-menu").addEventListener("click", leaveToMainMenu);
+$("btn-main-menu").addEventListener("click", openSettings);
+
+$("settings-close").addEventListener("click", closeSettings);
+$("settings-leave").addEventListener("click", leaveToMainMenu);
+
+$("settings-music-volume").addEventListener("input", () => {
+  const v = $("settings-music-volume").value;
+  $("music-audio").volume = v / 100;
+  $("music-volume").value = v;
+  localStorage.setItem("setra-music-volume", v);
+});
+
+$("settings-sfx-volume").addEventListener("input", () => {
+  setSfxVolume($("settings-sfx-volume").value);
+});
+
+$("settings-music-toggle").addEventListener("click", () => {
+  if (music.playing) pauseMusic();
+  else playMusic();
+  updateSettingsToggles();
+});
+
+$("settings-sfx-toggle").addEventListener("click", () => {
+  setSfxEnabled(!sfxEnabled);
+  updateSoundButton(sfxEnabled);
+  updateSettingsToggles();
+  if (sfxEnabled) playSfx("coin");
+});
 
 $("btn-sound").addEventListener("click", () => {
   setSfxEnabled(!sfxEnabled);
@@ -332,6 +398,7 @@ socket.on("room:left", () => {
   state.dungeonOpen = false;
   state.tavernOpen = false;
   state.blacksmithOpen = false;
+  state.merchantOpen = false;
   state.templeOpen = false;
   state.inventoryOpen = false;
   state.pendingFx = [];
@@ -347,7 +414,44 @@ socket.on("room:left", () => {
 });
 
 socket.on("server:error", (payload) => {
+  playSfx("block");
   showToast(payload.message || "The hall refuses that action.");
+});
+
+socket.on("shop:buyResult", (payload) => {
+  sfxPlay("lootsound");
+  showNotice("buy", "Purchase", payload && payload.text ? payload.text : "Item purchased.");
+});
+
+function chestItemName(itemId) {
+  const it = (CATALOG.items || []).find((x) => x.id === itemId);
+  return it ? it.name : "Chest";
+}
+
+function lootItemIcon(item) {
+  const full = (CATALOG.items || []).find((x) => x.id === item.id);
+  const slot = full ? full.slot : "";
+  const map = {
+    weapon: "⚔️", head: "🪖", armor: "🛡️", legs: "🦿", boots: "👢",
+    amulet: "📿", ring: "💍", consumable: "🧪",
+  };
+  return map[slot] || "🎁";
+}
+
+socket.on("chest:loot", (payload) => {
+  if (!payload) return;
+  const items = (payload.items || []).map((it) => ({
+    name: it.name,
+    rarity: it.rarity,
+    description: it.description,
+    icon: lootItemIcon(it),
+  }));
+  ChestSystem.open({
+    title: chestItemName(payload.itemId),
+    tier: "gold",
+    items,
+    onComplete: () => renderTown(state.room),
+  });
 });
 
 // ---- Session resume (page-refresh persistence) ----
@@ -364,6 +468,7 @@ socket.on("session:expired", () => {
   state.dungeonOpen = false;
   state.tavernOpen = false;
   state.blacksmithOpen = false;
+  state.merchantOpen = false;
   state.templeOpen = false;
   state.inventoryOpen = false;
   state.pendingFx = [];

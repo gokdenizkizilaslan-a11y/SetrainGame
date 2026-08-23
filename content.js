@@ -129,7 +129,8 @@ const CONTENT = {
       },
       "startingSkills": [
         "heavy_strike",
-        "defend"
+        "defend",
+        "battle_fury"
       ],
       "evolution": {
         "level": 20,
@@ -166,7 +167,17 @@ const CONTENT = {
         "mana": 1,
         "resistance": 3,
         "magicPower": 1,
-        "healPower": 0
+        "healPower": 0,
+        "critChance": 1,
+        "critDamage": 2
+      },
+      "critChance": {
+        "min": 8,
+        "max": 14
+      },
+      "critDamage": {
+        "min": 40,
+        "max": 80
       }
     },
     {
@@ -220,7 +231,17 @@ const CONTENT = {
         "mana": 2,
         "resistance": 2,
         "magicPower": 2,
-        "healPower": 0
+        "healPower": 0,
+        "critChance": 1,
+        "critDamage": 2
+      },
+      "critChance": {
+        "min": 8,
+        "max": 14
+      },
+      "critDamage": {
+        "min": 40,
+        "max": 80
       }
     },
     {
@@ -275,7 +296,17 @@ const CONTENT = {
         "mana": 5,
         "resistance": 1,
         "magicPower": 6,
-        "healPower": 1
+        "healPower": 1,
+        "critChance": 1,
+        "critDamage": 2
+      },
+      "critChance": {
+        "min": 8,
+        "max": 14
+      },
+      "critDamage": {
+        "min": 40,
+        "max": 80
       }
     },
     {
@@ -329,7 +360,17 @@ const CONTENT = {
         "mana": 2,
         "resistance": 1,
         "magicPower": 1,
-        "healPower": 0
+        "healPower": 0,
+        "critChance": 1,
+        "critDamage": 2
+      },
+      "critChance": {
+        "min": 8,
+        "max": 14
+      },
+      "critDamage": {
+        "min": 40,
+        "max": 80
       }
     },
     {
@@ -383,7 +424,17 @@ const CONTENT = {
         "mana": 3,
         "resistance": 4,
         "magicPower": 3,
-        "healPower": 1
+        "healPower": 1,
+        "critChance": 1,
+        "critDamage": 2
+      },
+      "critChance": {
+        "min": 8,
+        "max": 14
+      },
+      "critDamage": {
+        "min": 40,
+        "max": 80
       }
     },
     {
@@ -437,7 +488,17 @@ const CONTENT = {
         "mana": 1,
         "resistance": 1,
         "magicPower": 1,
-        "healPower": 0
+        "healPower": 0,
+        "critChance": 1,
+        "critDamage": 2
+      },
+      "critChance": {
+        "min": 8,
+        "max": 14
+      },
+      "critDamage": {
+        "min": 40,
+        "max": 80
       }
     },
     {
@@ -493,7 +554,17 @@ const CONTENT = {
         "mana": 5,
         "resistance": 2,
         "magicPower": 5,
-        "healPower": 1
+        "healPower": 1,
+        "critChance": 1,
+        "critDamage": 2
+      },
+      "critChance": {
+        "min": 8,
+        "max": 14
+      },
+      "critDamage": {
+        "min": 40,
+        "max": 80
       }
     },
     {
@@ -548,7 +619,17 @@ const CONTENT = {
         "mana": 1,
         "resistance": 5,
         "magicPower": 1,
-        "healPower": 1
+        "healPower": 1,
+        "critChance": 1,
+        "critDamage": 2
+      },
+      "critChance": {
+        "min": 8,
+        "max": 14
+      },
+      "critDamage": {
+        "min": 40,
+        "max": 80
       }
     },
     {
@@ -602,7 +683,9 @@ const CONTENT = {
         "mana": 2,
         "resistance": 4,
         "magicPower": 1,
-        "healPower": 0
+        "healPower": 0,
+        "critChance": 1,
+        "critDamage": 2
       },
       "evolveBonus": {
         "hp": 60,
@@ -663,7 +746,9 @@ const CONTENT = {
         "mana": 3,
         "resistance": 2,
         "magicPower": 2,
-        "healPower": 0
+        "healPower": 0,
+        "critChance": 1,
+        "critDamage": 2
       },
       "evolveBonus": {
         "hp": 40,
@@ -725,7 +810,9 @@ const CONTENT = {
         "mana": 6,
         "resistance": 1,
         "magicPower": 7,
-        "healPower": 1
+        "healPower": 1,
+        "critChance": 1,
+        "critDamage": 2
       },
       "evolveBonus": {
         "hp": 30,
@@ -786,7 +873,9 @@ const CONTENT = {
         "mana": 3,
         "resistance": 1,
         "magicPower": 1,
-        "healPower": 0
+        "healPower": 0,
+        "critChance": 1,
+        "critDamage": 2
       },
       "evolveBonus": {
         "hp": 35,
@@ -847,7 +936,9 @@ const CONTENT = {
         "mana": 4,
         "resistance": 5,
         "magicPower": 4,
-        "healPower": 1
+        "healPower": 1,
+        "critChance": 1,
+        "critDamage": 2
       },
       "evolveBonus": {
         "hp": 55,
@@ -909,7 +1000,9 @@ const CONTENT = {
         "mana": 2,
         "resistance": 1,
         "magicPower": 1,
-        "healPower": 0
+        "healPower": 0,
+        "critChance": 1,
+        "critDamage": 2
       },
       "evolveBonus": {
         "hp": 30,
@@ -971,7 +1064,9 @@ const CONTENT = {
         "mana": 6,
         "resistance": 2,
         "magicPower": 6,
-        "healPower": 2
+        "healPower": 2,
+        "critChance": 1,
+        "critDamage": 2
       },
       "evolveBonus": {
         "hp": 35,
@@ -1034,7 +1129,9 @@ const CONTENT = {
         "mana": 1,
         "resistance": 6,
         "magicPower": 1,
-        "healPower": 1
+        "healPower": 1,
+        "critChance": 1,
+        "critDamage": 2
       },
       "evolveBonus": {
         "hp": 90,
@@ -1091,7 +1188,9 @@ const CONTENT = {
         "mana": 2,
         "resistance": 5,
         "magicPower": 1,
-        "healPower": 0
+        "healPower": 0,
+        "critChance": 1,
+        "critDamage": 2
       },
       "evolveBonus": {
         "hp": 80,
@@ -1148,7 +1247,9 @@ const CONTENT = {
         "mana": 3,
         "resistance": 2,
         "magicPower": 3,
-        "healPower": 0
+        "healPower": 0,
+        "critChance": 1,
+        "critDamage": 2
       },
       "evolveBonus": {
         "hp": 50,
@@ -1206,7 +1307,9 @@ const CONTENT = {
         "mana": 7,
         "resistance": 1,
         "magicPower": 8,
-        "healPower": 1
+        "healPower": 1,
+        "critChance": 1,
+        "critDamage": 2
       },
       "evolveBonus": {
         "hp": 35,
@@ -1263,7 +1366,9 @@ const CONTENT = {
         "mana": 3,
         "resistance": 1,
         "magicPower": 2,
-        "healPower": 0
+        "healPower": 0,
+        "critChance": 1,
+        "critDamage": 2
       },
       "evolveBonus": {
         "hp": 45,
@@ -1320,7 +1425,9 @@ const CONTENT = {
         "mana": 4,
         "resistance": 6,
         "magicPower": 4,
-        "healPower": 1
+        "healPower": 1,
+        "critChance": 1,
+        "critDamage": 2
       },
       "evolveBonus": {
         "hp": 70,
@@ -1378,7 +1485,9 @@ const CONTENT = {
         "mana": 2,
         "resistance": 1,
         "magicPower": 2,
-        "healPower": 0
+        "healPower": 0,
+        "critChance": 1,
+        "critDamage": 2
       },
       "evolveBonus": {
         "hp": 38,
@@ -1436,7 +1545,9 @@ const CONTENT = {
         "mana": 7,
         "resistance": 3,
         "magicPower": 7,
-        "healPower": 2
+        "healPower": 2,
+        "critChance": 1,
+        "critDamage": 2
       },
       "evolveBonus": {
         "hp": 45,
@@ -1495,7 +1606,9 @@ const CONTENT = {
         "mana": 1,
         "resistance": 7,
         "magicPower": 1,
-        "healPower": 1
+        "healPower": 1,
+        "critChance": 1,
+        "critDamage": 2
       },
       "evolveBonus": {
         "hp": 110,
@@ -1592,6 +1705,9 @@ const CONTENT = {
     },
     "blacksmith": {
       "stamina": 2
+    },
+    "merchant": {
+      "stamina": 1
     },
     "tavern": {
       "stamina": 1,
@@ -2020,6 +2136,22 @@ const CONTENT = {
       "particles": "burst",
       "sound": [
         "skull_crush"
+      ]
+    },
+    "buff": {
+      "animation": "defend",
+      "color": "#8fe08a",
+      "particles": "glow",
+      "sound": [
+        "shield"
+      ]
+    },
+    "dot": {
+      "animation": "hit",
+      "color": "#b98cff",
+      "particles": "pulse",
+      "sound": [
+        "bloodmagic1"
       ]
     }
   },
@@ -2941,6 +3073,84 @@ const CONTENT = {
       },
       "image": "/images/items/void_cleaver.png",
       "description": "+30 Attack. The edge drinks the dark."
+    },
+    {
+      "id": "wooden_chest",
+      "name": "Wooden Chest",
+      "slot": "chest",
+      "rarity": "common",
+      "price": {
+        "gold": 60,
+        "wood": 0
+      },
+      "chestTier": "f",
+      "image": "",
+      "description": "A simple chest. Common odds of decent loot."
+    },
+    {
+      "id": "iron_chest",
+      "name": "Iron Chest",
+      "slot": "chest",
+      "rarity": "uncommon",
+      "price": {
+        "gold": 150,
+        "wood": 0
+      },
+      "chestTier": "d",
+      "image": "",
+      "description": "A sturdy chest. Better odds of uncommon loot."
+    },
+    {
+      "id": "gold_chest",
+      "name": "Gold Chest",
+      "slot": "chest",
+      "rarity": "rare",
+      "price": {
+        "gold": 320,
+        "wood": 0
+      },
+      "chestTier": "c",
+      "image": "",
+      "description": "A gilded chest. Decent odds of rare loot."
+    },
+    {
+      "id": "emerald_chest",
+      "name": "Emerald Chest",
+      "slot": "chest",
+      "rarity": "epic",
+      "price": {
+        "gold": 0,
+        "wood": 0
+      },
+      "chestTier": "b",
+      "image": "",
+      "description": "A gem-studded chest. Strong odds of epic loot."
+    },
+    {
+      "id": "obsidian_chest",
+      "name": "Obsidian Chest",
+      "slot": "chest",
+      "rarity": "legendary",
+      "price": {
+        "gold": 0,
+        "wood": 0
+      },
+      "chestTier": "a",
+      "image": "",
+      "description": "A black-glass chest. Fine odds of legendary loot."
+    },
+    {
+      "id": "mythic_chest",
+      "name": "Mythic Chest",
+      "slot": "chest",
+      "rarity": "mythic",
+      "price": {
+        "gold": 0,
+        "wood": 0
+      },
+      "chestTier": "s",
+      "image": "",
+      "description": "A chest of legend. Great odds of mythic loot."
     }
   ],
   "equipmentSlots": [
@@ -3634,6 +3844,222 @@ const CONTENT = {
       "defense": 0.95,
       "image": "/images/skills/immovable.png",
       "description": "Block 95% of incoming damage this round."
+    },
+    {
+      "id": "battle_fury",
+      "name": "Battle Fury",
+      "target": "self",
+      "mana": 8,
+      "buffs": [
+        { "kind": "attack", "value": 0.3 }
+      ],
+      "duration": 2,
+      "image": "/images/skills/battle_fury.png",
+      "description": "Increase your damage by 30% for 2 rounds."
+    },
+    {
+      "id": "iron_wall",
+      "name": "Iron Wall",
+      "target": "self",
+      "mana": 8,
+      "buffs": [
+        { "kind": "defense", "value": 0.4 }
+      ],
+      "duration": 2,
+      "image": "/images/skills/iron_wall.png",
+      "description": "Block 40% of incoming damage for 2 rounds."
+    },
+    {
+      "id": "group_guard",
+      "name": "Group Guard",
+      "target": "party",
+      "mana": 10,
+      "buffs": [
+        { "kind": "defense", "value": 0.25 }
+      ],
+      "duration": 2,
+      "image": "/images/skills/group_guard.png",
+      "description": "The whole party blocks 25% of incoming damage for 2 rounds."
+    },
+    {
+      "id": "cripple",
+      "name": "Cripple",
+      "target": "enemy",
+      "mana": 8,
+      "buffs": [
+        { "kind": "weaken", "value": 0.3 },
+        { "kind": "expose", "value": 0.2 }
+      ],
+      "duration": 2,
+      "image": "/images/skills/cripple.png",
+      "description": "A monster deals 30% less damage and takes 20% more for 2 rounds."
+    },
+    {
+      "id": "venom_strike",
+      "name": "Venom Strike",
+      "target": "enemy",
+      "mana": 9,
+      "power": 0.6,
+      "element": "physical",
+      "buffs": [
+        { "kind": "dot", "value": 0.05 }
+      ],
+      "duration": 3,
+      "image": "/images/skills/venom_strike.png",
+      "description": "Strike for 0.6x damage and poison the monster for 3 rounds."
+    },
+    {
+      "id": "rejuvenate",
+      "name": "Rejuvenate",
+      "target": "ally",
+      "mana": 8,
+      "buffs": [
+        { "kind": "regen", "value": 0.08 }
+      ],
+      "duration": 3,
+      "image": "/images/skills/rejuvenate.png",
+      "description": "An ally regains 8% of max HP each round for 3 rounds."
+    },
+    {
+      "id": "monster_physical_attack",
+      "name": "Savage Blow",
+      "target": "enemy",
+      "kind": "attack",
+      "power": 1.05,
+      "element": "physical",
+      "monster": true,
+      "description": "Monster basic attack."
+    },
+    {
+      "id": "monster_shadow_attack",
+      "name": "Shadow Claw",
+      "target": "enemy",
+      "kind": "attack",
+      "power": 1.15,
+      "element": "shadow",
+      "monster": true,
+      "description": "Monster basic attack."
+    },
+    {
+      "id": "monster_arcane_attack",
+      "name": "Arcane Surge",
+      "target": "enemy",
+      "kind": "attack",
+      "power": 1.15,
+      "element": "arcane",
+      "monster": true,
+      "description": "Monster basic attack."
+    },
+    {
+      "id": "monster_heavy_blow",
+      "name": "Heavy Blow",
+      "target": "enemy",
+      "kind": "attack",
+      "power": 1.5,
+      "element": "physical",
+      "monster": true,
+      "description": "A heavy monster blow."
+    },
+    {
+      "id": "monster_shadow_bolt",
+      "name": "Shadow Bolt",
+      "target": "enemy",
+      "kind": "attack",
+      "power": 1.5,
+      "element": "shadow",
+      "monster": true,
+      "description": "A dark monster blast."
+    },
+    {
+      "id": "monster_arcane_storm",
+      "name": "Arcane Storm",
+      "target": "enemy",
+      "kind": "attack",
+      "power": 1.5,
+      "element": "arcane",
+      "monster": true,
+      "description": "A surge of monster magic."
+    },
+    {
+      "id": "monster_frenzy",
+      "name": "Frenzy",
+      "target": "self",
+      "kind": "buff",
+      "buffs": [
+        { "kind": "attack", "value": 0.3 }
+      ],
+      "duration": 2,
+      "monster": true,
+      "description": "The monster deals 30% more damage for 2 rounds."
+    },
+    {
+      "id": "monster_stoneskin",
+      "name": "Stoneskin",
+      "target": "self",
+      "kind": "buff",
+      "buffs": [
+        { "kind": "defense", "value": 0.3 }
+      ],
+      "duration": 2,
+      "monster": true,
+      "description": "The monster blocks 30% of damage for 2 rounds."
+    },
+    {
+      "id": "monster_regen",
+      "name": "Regenerate",
+      "target": "self",
+      "kind": "buff",
+      "buffs": [
+        { "kind": "regen", "value": 0.05 }
+      ],
+      "duration": 3,
+      "monster": true,
+      "description": "The monster heals 5% of max HP each round for 3 rounds."
+    },
+    {
+      "id": "monster_weaken",
+      "name": "Crushing Aura",
+      "target": "enemy",
+      "kind": "debuff",
+      "buffs": [
+        { "kind": "weaken", "value": 0.25 }
+      ],
+      "duration": 2,
+      "monster": true,
+      "description": "A hero deals 25% less damage for 2 rounds."
+    },
+    {
+      "id": "monster_vulnerable",
+      "name": "Expose Weakness",
+      "target": "enemy",
+      "kind": "debuff",
+      "buffs": [
+        { "kind": "expose", "value": 0.25 }
+      ],
+      "duration": 2,
+      "monster": true,
+      "description": "A hero takes 25% more damage for 2 rounds."
+    },
+    {
+      "id": "monster_poison",
+      "name": "Venom",
+      "target": "enemy",
+      "kind": "debuff",
+      "buffs": [
+        { "kind": "dot", "value": 0.06 }
+      ],
+      "duration": 3,
+      "monster": true,
+      "description": "A hero takes damage each round for 3 rounds."
+    },
+    {
+      "id": "monster_heal",
+      "name": "Graft",
+      "target": "self",
+      "kind": "heal",
+      "amount": 0.15,
+      "monster": true,
+      "description": "The monster restores 15% of max HP."
     }
   ]
 };
@@ -3681,6 +4107,7 @@ function publicCatalog() {
     town: {
       search: { stamina: CONTENT.town.search.stamina },
       blacksmith: { stamina: CONTENT.town.blacksmith.stamina },
+      merchant: { stamina: CONTENT.town.merchant.stamina },
       tavern: {
         stamina: CONTENT.town.tavern.stamina,
         bets: CONTENT.town.tavern.bets,
@@ -3726,6 +4153,10 @@ function publicCatalog() {
       mana: s.mana,
       image: s.image,
       description: s.description || "",
+      buffs: s.buffs || null,
+      duration: s.duration || null,
+      kind: s.kind || null,
+      monster: s.monster || false,
     })),
     items: CONTENT.items.map((i) => ({
       id: i.id,

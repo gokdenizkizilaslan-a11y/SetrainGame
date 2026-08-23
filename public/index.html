@@ -170,6 +170,14 @@
           <div id="blacksmith-content"></div>
         </div>
 
+        <div id="merchant-view" class="overlay-view hidden">
+          <div class="overlay-head">
+            <p class="eyebrow">The Merchant</p>
+            <button type="button" class="btn btn--ghost" id="btn-merchant-close">Back to Town</button>
+          </div>
+          <div id="merchant-content"></div>
+        </div>
+
         <div id="inventory-view" class="overlay-view hidden">
           <div class="overlay-head">
             <p class="eyebrow">Inventory</p>
@@ -229,7 +237,7 @@
     </div>
 
     <div id="edge-buttons" class="edge-buttons hidden">
-      <button type="button" id="btn-main-menu" class="edge-btn edge-btn--menu" title="Leave the game and return to the main menu">
+      <button type="button" id="btn-main-menu" class="edge-btn edge-btn--menu" title="Open settings">
         ☰ Menu
       </button>
       <button type="button" id="btn-sound" class="edge-btn edge-btn--sound" title="Toggle sound effects">
@@ -237,8 +245,242 @@
       </button>
     </div>
 
+    <div id="settings-overlay" class="overlay-dark overlay-dark--top hidden">
+      <div class="settings-card">
+        <h2>Settings</h2>
+
+        <div class="settings-row">
+          <span class="settings-label">Background Music</span>
+          <input id="settings-music-volume" class="settings-slider" type="range" min="1" max="100" value="70" aria-label="Music volume" />
+        </div>
+
+        <div class="settings-row">
+          <span class="settings-label">Sound Effects</span>
+          <input id="settings-sfx-volume" class="settings-slider" type="range" min="1" max="100" value="100" aria-label="SFX volume" />
+        </div>
+
+        <div class="settings-row settings-row--toggles">
+          <button type="button" id="settings-music-toggle" class="btn btn--ghost">Music: On</button>
+          <button type="button" id="settings-sfx-toggle" class="btn btn--ghost">SFX: On</button>
+        </div>
+
+        <div class="settings-actions">
+          <button type="button" id="settings-close" class="btn btn--bronze">Close</button>
+          <button type="button" id="settings-leave" class="btn btn--danger">Leave Game</button>
+        </div>
+      </div>
+    </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/screens.js"></script>
     <script src="/js/client.js"></script>
+
+<!-- ============================================================
+  THE SETRA GAME - DUNGEON CHEST & 3D LOOT OPENING MODULE
+  Usage: Add this code to your game HTML and call 'ChestSystem.open({...})'
+============================================================ -->
+
+<!-- 1. CHEST MODAL HTML STRUCTURE -->
+<div id="chest-overlay" class="chest-overlay hidden">
+  <div class="chest-modal">
+    <div class="chest-header">
+      <div id="chest-title-badge" class="chest-badge">GILDED ROYAL CHEST</div>
+      <h2 id="chest-status-text">Click Chest to Unlock</h2>
+    </div>
+
+    <!-- 3D Chest Visual -->
+    <div id="chest-box" class="chest-3d-box" onclick="ChestSystem.triggerOpen()">
+      <div class="chest-light-ray"></div>
+      <div class="chest-lid">
+        <div class="chest-lid-dome"></div>
+        <div class="chest-band left"></div>
+        <div class="chest-band right"></div>
+        <div class="chest-latch-top"></div>
+      </div>
+      <div class="chest-base">
+        <div class="chest-band left"></div>
+        <div class="chest-band right"></div>
+        <div id="chest-lock" class="chest-lock">
+          <div class="lock-keyhole"></div>
+        </div>
+      </div>
+    </div>
+
+    <button id="btn-open-chest" class="btn-chest-action" onclick="ChestSystem.triggerOpen()">
+      Unlock Chest ➔
+    </button>
+
+    <!-- Loot Cards Grid -->
+    <div id="loot-cards-container" class="loot-cards-grid hidden"></div>
+
+    <!-- Completed Actions -->
+    <div id="chest-footer-actions" class="chest-footer hidden">
+      <button class="btn-chest-confirm" onclick="ChestSystem.close()">Claim Loot & Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- 2. STYLES -->
+<style>
+.chest-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center; z-index: 9999;
+  font-family: 'Cinzel', serif, system-ui, sans-serif; color: #fff;
+}
+.chest-overlay.hidden { display: none !important; }
+.chest-modal {
+  display: flex; flex-direction: column; align-items: center; max-width: 900px; width: 90%;
+  text-align: center;
+}
+.chest-badge {
+  display: inline-block; padding: 4px 14px; border-radius: 999px; background: #1c1917;
+  border: 1px solid #d97706; color: #fbbf24; font-size: 12px; letter-spacing: 1px;
+}
+.chest-header h2 { font-size: 24px; margin: 10px 0 20px 0; color: #f5f5f4; }
+
+/* 3D Chest & Shaking */
+.chest-3d-box {
+  width: 200px; height: 160px; position: relative; cursor: pointer; perspective: 800px;
+  margin: 20px auto; transition: transform 0.3s;
+}
+.chest-3d-box.shaking {
+  animation: chestRattle 0.6s infinite;
+}
+@keyframes chestRattle {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  20% { transform: translate(-5px, -3px) rotate(-4deg); }
+  40% { transform: translate(5px, 2px) rotate(4deg); }
+  60% { transform: translate(-6px, 4px) rotate(-5deg); }
+  80% { transform: translate(6px, -4px) rotate(5deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+/* Chest Lid & Base */
+.chest-lid {
+  width: 100%; height: 75px; background: linear-gradient(to bottom, #78350f, #451a03);
+  border-radius: 20px 20px 0 0; border: 3px solid #291004; position: relative;
+  transform-origin: bottom; transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: inset 0 2px 4px rgba(255,255,255,0.2);
+}
+.chest-3d-box.opened .chest-lid {
+  transform: rotateX(-115deg) translateY(-10px);
+}
+.chest-base {
+  width: 100%; height: 85px; background: linear-gradient(to bottom, #78350f, #291004);
+  border-radius: 0 0 14px 14px; border: 3px solid #291004; position: relative;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.8);
+}
+.chest-band {
+  position: absolute; width: 22px; top: 0; bottom: 0;
+  background: linear-gradient(to right, #fbbf24, #d97706, #b45309); border: 1px solid #78350f;
+}
+.chest-band.left { left: 24px; }
+.chest-band.right { right: 24px; }
+.chest-lock {
+  position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%);
+  width: 32px; height: 32px; background: #fbbf24; border: 2px solid #78350f; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px rgba(251,191,36,0.8);
+}
+.lock-keyhole { width: 6px; height: 10px; background: #1c1917; border-radius: 2px; }
+
+/* Buttons */
+.btn-chest-action, .btn-chest-confirm {
+  padding: 12px 28px; font-size: 16px; font-weight: bold; border-radius: 10px; cursor: pointer;
+  background: linear-gradient(to right, #d97706, #fbbf24); border: 1px solid #fef08a; color: #1c1917;
+  box-shadow: 0 0 20px rgba(245,158,11,0.5); margin-top: 15px; transition: transform 0.1s;
+}
+.btn-chest-action:active { transform: scale(0.96); }
+
+/* Loot Cards */
+.loot-cards-grid {
+  display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; margin-top: 20px;
+}
+.loot-card {
+  width: 160px; height: 220px; border-radius: 12px; background: #16110d; border: 2px solid #444;
+  padding: 12px; display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.8); animation: cardPop 0.5s ease-out;
+}
+@keyframes cardPop {
+  0% { opacity: 0; transform: scale(0.5) translateY(40px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.loot-card.common { border-color: #64748b; }
+.loot-card.uncommon { border-color: #16a34a; box-shadow: 0 0 15px rgba(34,197,94,0.3); }
+.loot-card.rare { border-color: #0284c7; box-shadow: 0 0 15px rgba(56,189,248,0.4); }
+.loot-card.epic { border-color: #9333ea; box-shadow: 0 0 20px rgba(192,132,252,0.5); }
+.loot-card.legendary { border-color: #d97706; box-shadow: 0 0 25px rgba(251,191,36,0.7); }
+.loot-card.mythic { border-color: #e11d48; box-shadow: 0 0 25px rgba(244,63,94,0.8); }
+.loot-card.ancient_relic { border-color: #0d9488; box-shadow: 0 0 30px rgba(45,212,191,0.9); }
+</style>
+
+<!-- 3. JAVASCRIPT ENGINE -->
+<script>
+window.ChestSystem = {
+  activeSession: null,
+
+  open: function(options) {
+    this.activeSession = {
+      title: options.title || 'Royal Chest',
+      tier: options.tier || 'gold',
+      items: options.items || [],
+      onComplete: options.onComplete || null
+    };
+
+    document.getElementById('chest-title-badge').innerText = this.activeSession.title.toUpperCase();
+    document.getElementById('chest-status-text').innerText = "Click Chest to Unlock";
+    document.getElementById('chest-box').className = "chest-3d-box";
+    document.getElementById('btn-open-chest').classList.remove('hidden');
+    document.getElementById('loot-cards-container').classList.add('hidden');
+    document.getElementById('loot-cards-container').innerHTML = '';
+    document.getElementById('chest-footer-actions').classList.add('hidden');
+    document.getElementById('chest-overlay').classList.remove('hidden');
+  },
+
+  triggerOpen: function() {
+    const box = document.getElementById('chest-box');
+    if (box.classList.contains('opened') || box.classList.contains('shaking')) return;
+
+    box.classList.add('shaking');
+    document.getElementById('chest-status-text').innerText = "Breaking Lock...";
+
+    setTimeout(() => {
+      box.classList.remove('shaking');
+      box.classList.add('opened');
+      document.getElementById('chest-status-text').innerText = "Loot Revealed!";
+      document.getElementById('btn-open-chest').classList.add('hidden');
+
+      const container = document.getElementById('loot-cards-container');
+      container.classList.remove('hidden');
+      container.innerHTML = '';
+
+      this.activeSession.items.forEach((item, index) => {
+        const card = document.createElement('div');
+        card.className = `loot-card ${item.rarity || 'common'}`;
+        card.style.animationDelay = (index * 0.15) + 's';
+        card.innerHTML = `
+          <span style="font-size: 10px; text-transform: uppercase; color: #aaa; font-weight: bold;">${item.rarity || 'Item'}</span>
+          <div style="font-size: 40px; margin: 8px 0;">${item.icon || '🎁'}</div>
+          <strong style="font-size: 13px; color: #fff;">${item.name}</strong>
+          <small style="font-size: 11px; color: #aaa; margin-top: 4px;">${item.description || ''}</small>
+        `;
+        container.appendChild(card);
+      });
+
+      document.getElementById('chest-footer-actions').classList.remove('hidden');
+    }, 1200);
+  },
+
+  close: function() {
+    document.getElementById('chest-overlay').classList.add('hidden');
+    if (this.activeSession && this.activeSession.onComplete) {
+      this.activeSession.onComplete(this.activeSession.items);
+    }
+  }
+};
+</script>
+
+
   </body>
+
+
 </html>

@@ -8,6 +8,7 @@ const {
   getClassBasicAttack,
 } = require("../content");
 const { dealDamage, heal, loseLife, addXp, removeItem, healForFood, addItem } = require("./players");
+const chest = require("./chest");
 
 function randVariance(variance) {
   return 1 + (Math.random() * 2 - 1) * variance;
@@ -72,6 +73,144 @@ function weightedPick(weights) {
   return entries[entries.length - 1][0];
 }
 
+function hashString(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+// Buffs/debuffs come from a skill's `buffs: [{ kind, value }]` array or the legacy
+// single `defense: 0.x` field. `duration` controls how many rounds it lasts (default 1).
+function buffEntries(skill) {
+  if (Array.isArray(skill.buffs) && skill.buffs.length) return skill.buffs;
+  if (skill.defense) return [{ kind: "defense", value: skill.defense }];
+  return null;
+}
+
+function buffSum(d, targetType, targetId, kind) {
+  if (!d.buffs) return 0;
+  let sum = 0;
+  for (const b of d.buffs) {
+    if (b.targetType === targetType && b.targetId === targetId && b.kind === kind) sum += b.value;
+  }
+  return sum;
+}
+
+function applyBuffs(room, d, actor, actorName, skill, targetType, targetIds, actorIsPlayer) {
+  const entries = buffEntries(skill);
+  if (!entries || !entries.length) return;
+  // Players may only debuff enemies — never buff them.
+  const allowed = targetType === "monster" && actorIsPlayer
+    ? new Set(["weaken", "expose", "dot"])
+    : new Set(["attack", "defense", "regen", "weaken", "expose", "dot"]);
+  const turns = Math.max(1, Math.round(skill.duration || 1));
+  let applied = false;
+  for (const tid of targetIds) {
+    for (const e of entries) {
+      if (!allowed.has(e.kind)) continue;
+      d.buffId = (d.buffId || 0) + 1;
+      d.buffs.push({
+        uid: d.buffId,
+        targetType,
+        targetId: tid,
+        kind: e.kind,
+        value: e.value,
+        turns,
+        skillId: skill.id,
+        sourceId: actor.id,
+        name: skill.name,
+      });
+      addFx(d, {
+        type: "buff",
+        actor: actor.id,
+        target: targetType === "player" ? "player" : "enemy",
+        targetId: targetType === "player" ? tid : Number(tid),
+        kind: e.kind,
+        value: e.value,
+        turns,
+        skill: skill.id,
+      });
+      applied = true;
+    }
+  }
+  if (applied && d.log) d.log.push(`${actorName} uses ${skill.name}.`);
+}
+
+function monsterSkills(mdef) {
+  if (Array.isArray(mdef.skills) && mdef.skills.length) {
+    return mdef.skills.map((id) => getSkill(id)).filter(Boolean);
+  }
+  // Auto-assign 3 exclusive skills so every monster has a kit. A monster with an
+  // explicit `skills` array in content.js overrides this.
+  const elem = mdef.element || "physical";
+  const basicId =
+    elem === "shadow" ? "monster_shadow_attack" : elem === "arcane" ? "monster_arcane_attack" : "monster_physical_attack";
+  const h = hashString(mdef.id);
+  const strongId =
+    elem === "shadow" ? "monster_shadow_bolt" : elem === "arcane" ? "monster_arcane_storm" : "monster_heavy_blow";
+  const selfBuffs = ["monster_frenzy", "monster_stoneskin", "monster_regen"];
+  const debuffs = ["monster_weaken", "monster_vulnerable", "monster_poison"];
+  const second = h % 2 === 0 ? strongId : selfBuffs[h % 3];
+  const third = debuffs[(h >> 1) % 3];
+  return [basicId, second, third].map((id) => getSkill(id)).filter(Boolean);
+}
+
+function pickMonsterSkill(mon) {
+  const list = mon.skills && mon.skills.length
+    ? mon.skills
+    : [{ id: "auto_attack", name: "Attack", kind: "attack", power: 1, element: "physical" }];
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+function healMonster(mon, fraction) {
+  const amt = Math.max(1, Math.round(mon.maxHp * (fraction || 0.1)));
+  const healed = Math.min(mon.maxHp - mon.hp, amt);
+  mon.hp += healed;
+  return healed;
+}
+
+// Applied at the end of a round: DoT damage, regen healing, then expire expired buffs.
+function tickBuffs(room, d) {
+  if (!d.buffs || !d.buffs.length) return;
+  for (const b of d.buffs) {
+    if (b.kind === "dot") {
+      if (b.targetType === "monster") {
+        const mon = d.wave[b.targetId];
+        if (mon && mon.hp > 0) {
+          const dmg = Math.max(1, Math.round(mon.maxHp * b.value));
+          mon.hp = Math.max(0, mon.hp - dmg);
+          addFx(d, { type: "damage", target: "enemy", targetId: b.targetId, amount: dmg, source: "dot", effect: "dot" });
+        }
+      } else {
+        const p = room.players.find((q) => q.id === b.targetId);
+        if (p && p.hp > 0) {
+          const dmg = Math.max(1, Math.round(p.maxHp * b.value));
+          dealDamage(p, dmg);
+          addFx(d, { type: "damage", actor: b.sourceId, target: "player", targetId: p.id, amount: dmg, source: "dot", effect: "dot" });
+        }
+      }
+    } else if (b.kind === "regen") {
+      if (b.targetType === "player") {
+        const p = room.players.find((q) => q.id === b.targetId);
+        if (p && p.hp > 0 && p.hp < p.maxHp) {
+          const before = p.hp;
+          heal(p, Math.max(1, Math.round(p.maxHp * b.value)));
+          const healed = p.hp - before;
+          if (healed > 0) addFx(d, { type: "heal", actor: p.id, target: "player", targetId: p.id, amount: healed, source: "regen", effect: "heal" });
+        }
+      } else {
+        const mon = d.wave[b.targetId];
+        if (mon && mon.hp > 0 && mon.hp < mon.maxHp) {
+          const healed = Math.min(mon.maxHp - mon.hp, Math.max(1, Math.round(mon.maxHp * b.value)));
+          mon.hp += healed;
+          addFx(d, { type: "heal", actor: b.targetId, target: "enemy", targetId: b.targetId, amount: healed, source: "regen", effect: "heal" });
+        }
+      }
+    }
+  }
+  d.buffs = d.buffs.filter((b) => --b.turns > 0);
+}
+
 function resetUsedSkills(d, playerId) {
   if (!d.usedSkills) d.usedSkills = {};
   d.usedSkills[playerId] = new Set();
@@ -119,13 +258,15 @@ function spawnWave(room, d) {
       maxHp: Math.max(1, Math.round(m.hp * power)),
       attack: Math.max(1, Math.round(m.attack * power)),
       speed: m.speed,
+      skills: monsterSkills(m),
     });
   }
 
   d.wave = wave;
   d.round = 1;
   d.phase = "players";
-  d.defending = {};
+  d.buffs = [];
+  d.buffId = 0;
   d.endedTurns = new Set();
   d.result = null;
   d.status = "fighting";
@@ -197,33 +338,41 @@ function act(room, player, skillId, targetId) {
   if (mana > 0) addFx(d, { type: "mana", actor: player.id, amount: mana, skill: skill.id });
   if (skill.target === "enemy") {
     const mon = d.wave[Number(targetId)];
-    const crit = Math.random() < (CONTENT.combat.critChance || 0);
-    const critMult = crit ? CONTENT.combat.critMult || 1.5 : 1;
-    const dmg = Math.max(
-      1,
-      Math.round(player.attack * skill.power * randVariance(CONTENT.combat.damageVariance) * critMult)
-    );
-    dealDamage(mon, dmg);
-    addFx(d, { type: "damage", actor: player.id, target: "enemy", targetId: Number(targetId), amount: dmg, skill: skill.id, elem: skill.element || "physical", effect: skill.effect || defaultEffectFor(skill.element), crit });
-    if (skill.lifesteal) {
-      const healed = heal(player, Math.max(1, Math.round(dmg * skill.lifesteal)));
-      addFx(d, { type: "heal", actor: player.id, target: player.id, amount: healed, source: "lifesteal", skill: skill.id, effect: "heal" });
+    if (skill.power) {
+      const critChance = player.critChance != null ? player.critChance / 100 : (CONTENT.combat.critChance || 0);
+      const critBonus = player.critDamage != null ? player.critDamage : Math.round(((CONTENT.combat.critMult || 1.5) - 1) * 100);
+      const crit = Math.random() < critChance;
+      const critMult = crit ? 1 + critBonus / 100 : 1;
+      const pAtk = buffSum(d, "player", player.id, "attack") - buffSum(d, "player", player.id, "weaken");
+      const mDef = buffSum(d, "monster", Number(targetId), "defense");
+      const mExp = buffSum(d, "monster", Number(targetId), "expose");
+      const dmg = Math.max(
+        1,
+        Math.round(player.attack * skill.power * randVariance(CONTENT.combat.damageVariance) * critMult * (1 + pAtk) * (1 - mDef + mExp))
+      );
+      dealDamage(mon, dmg);
+      addFx(d, { type: "damage", actor: player.id, target: "enemy", targetId: Number(targetId), amount: dmg, skill: skill.id, elem: skill.element || "physical", effect: skill.effect || defaultEffectFor(skill.element), crit });
+      if (skill.lifesteal) {
+        const healed = heal(player, Math.max(1, Math.round(dmg * skill.lifesteal)));
+        addFx(d, { type: "heal", actor: player.id, target: player.id, amount: healed, source: "lifesteal", skill: skill.id, effect: "heal" });
+      }
+      if (skill.healSelfPct) {
+        const healed = heal(player, Math.max(1, Math.round(player.maxHp * skill.healSelfPct)));
+        addFx(d, { type: "heal", actor: player.id, target: player.id, amount: healed, source: "skill", skill: skill.id, effect: "heal" });
+      }
     }
-    if (skill.healSelfPct) {
-      const healed = heal(player, Math.max(1, Math.round(player.maxHp * skill.healSelfPct)));
-      addFx(d, { type: "heal", actor: player.id, target: player.id, amount: healed, source: "skill", skill: skill.id, effect: "heal" });
-    }
+    applyBuffs(room, d, player, player.name, skill, "monster", [Number(targetId)], true);
   } else if (skill.target === "self") {
-    if (skill.defense) {
-      d.defending[player.id] = skill.defense;
-      addFx(d, { type: "defend", actor: player.id, value: skill.defense, skill: skill.id, effect: "defend" });
-    }
+    applyBuffs(room, d, player, player.name, skill, "player", [player.id], true);
   } else if (skill.target === "ally") {
     const target = room.players.find((p) => p.id === targetId);
-    if (target.hp > 0) {
-      const mult = 1 + (player.healPower || 0) / 40;
-      const healed = heal(target, Math.max(1, Math.round(target.maxHp * skill.heal * mult)));
-      addFx(d, { type: "heal", actor: player.id, target: target.id, amount: healed, source: "skill", skill: skill.id, effect: "heal" });
+    if (target) {
+      if (target.hp > 0) {
+        const mult = 1 + (player.healPower || 0) / 40;
+        const healed = heal(target, Math.max(1, Math.round(target.maxHp * skill.heal * mult)));
+        addFx(d, { type: "heal", actor: player.id, target: target.id, amount: healed, source: "skill", skill: skill.id, effect: "heal" });
+      }
+      applyBuffs(room, d, player, player.name, skill, "player", [target.id], true);
     }
   } else if (skill.target === "party") {
     for (const p of livingMembers(room, d)) {
@@ -232,11 +381,8 @@ function act(room, player, skillId, targetId) {
         const healed = heal(p, Math.max(1, Math.round(p.maxHp * skill.heal * mult)));
         addFx(d, { type: "heal", actor: player.id, target: p.id, amount: healed, source: "skill", skill: skill.id, effect: "heal" });
       }
-      if (skill.defense) {
-        d.defending[p.id] = skill.defense;
-        addFx(d, { type: "defend", actor: p.id, value: skill.defense, skill: skill.id, effect: "defend" });
-      }
     }
+    applyBuffs(room, d, player, player.name, skill, "player", livingMembers(room, d).map((p) => p.id), true);
   }
 
   if (skill.manaRestore || skill.manaRestorePct) {
@@ -341,20 +487,40 @@ function runNextMonster(room, d) {
     finishMonsterPhase(room, d);
     return;
   }
-  const { mon } = d.monsterQueue.shift();
+  const { mon, index } = d.monsterQueue.shift();
   if (mon.hp > 0) {
+    const skill = pickMonsterSkill(mon);
     const targets = livingMembers(room, d);
     const target = targets[Math.floor(Math.random() * targets.length)];
     const combat = CONTENT.combat;
-    const crit = Math.random() < (combat.critChance || 0);
-    const critMult = crit ? combat.critMult || 1.5 : 1;
-    let dmg = Math.round(mon.attack * randVariance(combat.damageVariance) * critMult);
-    const def = d.defending[target.id];
-    if (def) dmg = Math.round(dmg * (1 - def));
-    dmg -= Math.round(target.resistance * combat.resistanceMitigation);
-    dmg = Math.max(1, dmg);
-    dealDamage(target, dmg);
-    addFx(d, { type: "damage", actor: target.id, target: "player", targetId: target.id, amount: dmg, source: "monster", monster: mon.kind, elem: mon.element || "physical", effect: "monster", crit });
+    if (skill.kind === "heal") {
+      const healed = healMonster(mon, skill.amount);
+      if (healed > 0) {
+        addFx(d, { type: "heal", actor: index, target: "enemy", targetId: index, amount: healed, source: "monster", effect: "heal" });
+        d.log.push(`${mon.name} uses ${skill.name} and recovers ${healed} HP.`);
+      }
+    } else if (skill.kind === "buff") {
+      applyBuffs(room, d, { id: "monster_" + index }, mon.name, skill, "monster", [index], false);
+    } else if (skill.kind === "debuff") {
+      if (target) {
+        applyBuffs(room, d, { id: "monster_" + index }, mon.name, skill, "player", [target.id], false);
+      }
+    } else {
+      if (target) {
+        const crit = Math.random() < (combat.critChance || 0);
+        const critMult = crit ? combat.critMult || 1.5 : 1;
+        const mAtk = buffSum(d, "monster", index, "attack") - buffSum(d, "monster", index, "weaken");
+        const pDef = buffSum(d, "player", target.id, "defense");
+        const pExp = buffSum(d, "player", target.id, "expose");
+        let dmg = Math.round(
+          mon.attack * (skill.power || 1) * randVariance(combat.damageVariance) * critMult * (1 + mAtk) * (1 - pDef + pExp)
+        );
+        dmg -= Math.round(target.resistance * combat.resistanceMitigation);
+        dmg = Math.max(1, dmg);
+        dealDamage(target, dmg);
+        addFx(d, { type: "damage", actor: target.id, target: "player", targetId: target.id, amount: dmg, source: "monster", monster: mon.kind, elem: skill.element || mon.element || "physical", effect: "monster", crit });
+      }
+    }
     if (typeof room.broadcast === "function") room.broadcast();
     if (livingMembers(room, d).length === 0) {
       clearMonsterTimer(d);
@@ -371,13 +537,15 @@ function runNextMonster(room, d) {
 function finishMonsterPhase(room, d) {
   clearMonsterTimer(d);
   d.monsterQueue = [];
-  d.defending = {};
   if (d.status !== "fighting") return;
   if (livingMembers(room, d).length === 0) {
     defeat(room, d);
     if (typeof room.broadcast === "function") room.broadcast();
     return;
   }
+  tickBuffs(room, d);
+  checkEnd(room, d); // a DoT tick may have finished the last monster
+  if (d.status !== "fighting") return;
   d.round += 1;
   d.phase = "players";
   buildTurnOrder(room, d);
@@ -439,17 +607,25 @@ function victory(room, d) {
     const receivers = livingMembers(room, d).length ? livingMembers(room, d) : members;
     const receiver = receivers[Math.floor(Math.random() * receivers.length)];
     addItem(receiver, item.id, 1);
-    lootNotes.push(`${receiver.name} found ${item.name}.`);
+    const rarityMeta = ((CONTENT.loot || {}).rarityMeta || {})[rarity];
+    const rarityLabel = (rarityMeta && rarityMeta.label) || rarity;
+    lootNotes.push(`${receiver.name} found a ${rarityLabel} ${item.name}.`);
   }
+
+  const chestId = chest.chestForRank(d.rank);
+  const chestDef = getItem(chestId);
+  chest.awardToMembers(room, d, chestId);
+  addFx(d, { type: "chest" });
 
   d.status = "done";
   d.result = {
     outcome: "victory",
-    text: `Victory! The ${def.label} is clear. Each adventurer gains ${gold} gold, ${wood} wood, ${xp} XP.`,
+    text: `Victory! The ${def.label} is clear. Each adventurer gains ${gold} gold, ${wood} wood, ${xp} XP. Each adventurer finds a ${chestDef ? chestDef.name : "Chest"}!`,
   };
   if (lootNotes.length) {
     d.result.text += " " + lootNotes.join(" ");
     d.log.push(...lootNotes);
+    addFx(d, { type: "loot" });
   }
   addFx(d, { type: "result", outcome: "victory" });
   d.log.push(d.result.text);

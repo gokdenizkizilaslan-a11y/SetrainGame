@@ -9,6 +9,9 @@ const tavern = require("./tavern");
 const dungeon = require("./dungeon");
 const combat = require("./combat");
 const shop = require("./shop");
+const merchant = require("./merchant");
+const chest = require("./chest");
+const stock = require("./stock");
 const temple = require("./temple");
 const sessions = require("./sessions");
 const { onNewDay, equipItem, unequipSlot, setSkillLoadout } = require("./players");
@@ -339,7 +342,11 @@ function registerSocketHandlers(io) {
             onNewDay(p);
           }
           dungeon.resetRoomDungeons(room);
-          room.log = { type: "day", text: `Day ${room.day} dawns. Stamina restored.`, ts: Date.now() };
+          if (stock.maybeRotate(room)) {
+            room.log = { type: "day", text: `Day ${room.day} dawns. The merchants restock their shelves.`, ts: Date.now() };
+          } else {
+            room.log = { type: "day", text: `Day ${room.day} dawns. Stamina restored.`, ts: Date.now() };
+          }
         }
         emitRoomState(io, room);
       } catch (err) {
@@ -368,7 +375,32 @@ function registerSocketHandlers(io) {
       try {
         const { room, player } = gameContext(socket);
         const res = shop.buy(room, player, payload.itemId);
-        room.log = res;
+        room.log = { ...res, name: player.name, ts: Date.now() };
+        emitRoomState(io, room);
+        socket.emit("shop:buyResult", { text: res.text, itemId: payload.itemId });
+      } catch (err) {
+        emitError(socket, err);
+      }
+    });
+
+    socket.on("merchant:buy", (payload = {}) => {
+      try {
+        const { room, player } = gameContext(socket);
+        const res = merchant.buy(room, player, payload.itemId);
+        room.log = { ...res, name: player.name, ts: Date.now() };
+        emitRoomState(io, room);
+        socket.emit("shop:buyResult", { text: res.text, itemId: payload.itemId });
+      } catch (err) {
+        emitError(socket, err);
+      }
+    });
+
+    socket.on("chest:open", (payload = {}) => {
+      try {
+        const { room, player } = gameContext(socket);
+        const res = chest.openChest(room, player, payload.itemId);
+        room.log = { type: "chest", text: `${player.name} cracks open a chest.`, name: player.name, ts: Date.now() };
+        socket.emit("chest:loot", { itemId: payload.itemId, ...res });
         emitRoomState(io, room);
       } catch (err) {
         emitError(socket, err);
@@ -380,7 +412,8 @@ function registerSocketHandlers(io) {
     socket.on("temple:evolve", () => {
       try {
         const { room, player } = gameContext(socket);
-        room.log = temple.evolve(room, player);
+        const res = temple.evolve(room, player);
+        room.log = { ...res, name: player.name, ts: Date.now() };
         emitRoomState(io, room);
       } catch (err) {
         emitError(socket, err);

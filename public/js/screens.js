@@ -38,6 +38,13 @@ function setSfxEnabled(on) {
   localStorage.setItem("setra-sfx-enabled", on ? "1" : "0");
 }
 
+let sfxVolume = Number(localStorage.getItem("setra-sfx-volume")) || 100;
+function setSfxVolume(v) {
+  const n = Math.min(100, Math.max(1, Math.round(Number(v) || 100)));
+  sfxVolume = n;
+  localStorage.setItem("setra-sfx-volume", String(n));
+}
+
 let sfxCtx = null;
 function ensureSfx() {
   if (!sfxCtx) {
@@ -58,7 +65,7 @@ function sfxTone(freq, dur, type, vol, when, slideTo) {
   osc.frequency.setValueAtTime(freq, t0);
   if (slideTo) osc.frequency.exponentialRampToValueAtTime(Math.max(30, slideTo), t0 + dur);
   gain.gain.setValueAtTime(0.0001, t0);
-  gain.gain.exponentialRampToValueAtTime(vol, t0 + 0.012);
+  gain.gain.exponentialRampToValueAtTime(vol * (sfxVolume / 100), t0 + 0.012);
   gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
   osc.connect(gain).connect(ctx.destination);
   osc.start(t0);
@@ -79,7 +86,7 @@ function sfxNoise(dur, vol, when, filterFreq) {
   filter.type = "lowpass";
   filter.frequency.value = filterFreq || 800;
   const gain = ctx.createGain();
-  gain.gain.setValueAtTime(vol, t0);
+  gain.gain.setValueAtTime(vol * (sfxVolume / 100), t0);
   gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
   src.connect(filter).connect(gain).connect(ctx.destination);
   src.start(t0);
@@ -168,7 +175,7 @@ async function loadSounds() {
 }
 loadSounds();
 
-function sfxPlay(names) {
+function sfxPlay(names, vol) {
   if (!sfxEnabled) return;
   const group = Array.isArray(names) ? names : names ? [names] : [];
   const available = group.filter((id) => soundMap.has(id));
@@ -176,13 +183,34 @@ function sfxPlay(names) {
   if (id) {
     if (!audioCache[id]) audioCache[id] = new Audio(soundMap.get(id));
     const a = audioCache[id].cloneNode();
-    a.volume = 0.9;
+    a.volume = (vol == null ? 0.9 : vol) * (sfxVolume / 100);
     a.play().catch(() => {});
     return;
   }
   const name = SYNTH_FALLBACK[group[0]] || (group.length ? group[0] : null);
   if (name) playSfx(name);
 }
+
+const INTERACTIVE_SELECTOR =
+  ".btn, .action-card, .class-card, .room-row, .dungeon-card, .size-card, .bet-btn, .skill-slot, .item-btn, .enemy, .fighter, .equip-slot, .bag-row, .shop-card, .temple-card, .btn-chest-action, .btn-chest-confirm";
+let lastHoverEl = null;
+document.addEventListener("mouseover", (e) => {
+  if (!sfxEnabled) return;
+  const el = e.target && e.target.closest ? e.target.closest(INTERACTIVE_SELECTOR) : null;
+  if (el && el !== lastHoverEl) {
+    lastHoverEl = el;
+    sfxPlay("hoversound", 0.3);
+  }
+});
+document.addEventListener("mouseout", (e) => {
+  const el = e.target && e.target.closest ? e.target.closest(INTERACTIVE_SELECTOR) : null;
+  if (el === lastHoverEl) lastHoverEl = null;
+});
+document.addEventListener("click", (e) => {
+  if (!sfxEnabled) return;
+  const el = e.target && e.target.closest ? e.target.closest(INTERACTIVE_SELECTOR) : null;
+  if (el) sfxPlay("clicksound");
+});
 
 function spawnPopup(el, text, kind, color) {
   if (!el) return;
@@ -195,6 +223,17 @@ function spawnPopup(el, text, kind, color) {
 }
 
 const FX_CLASSES = ["fx-hit", "fx-heal", "fx-defend", "fx-hit-arcane", "fx-hit-holy", "fx-hit-shadow", "fx-hit-crit"];
+
+const ELEMENT_SOUNDS = {
+  physical: ["slash1", "slash2", "slash3", "slash4"],
+  fire: "firemagic",
+  frost: "frostmagic",
+  heal: "healingmagic",
+  shadow: ["bloodmagic1", "bloodmagic2"],
+  arcane: "normalmagic",
+  defend: "shield",
+  monster: "monstersound",
+};
 
 function applyTargetFx(el, kind) {
   if (!el) return;
@@ -211,6 +250,29 @@ function shakeCombat(root) {
   void wrap.offsetWidth;
   wrap.classList.add("combat-shake");
   setTimeout(() => wrap.classList.remove("combat-shake"), 550);
+}
+
+const BUFF_META = {
+  attack: { label: "Atk+", color: "#8fe08a" },
+  defense: { label: "Def+", color: "#7fb4ff" },
+  regen: { label: "Regen", color: "#8fe08a" },
+  weaken: { label: "Weaken", color: "#ff9d7a" },
+  expose: { label: "Vuln", color: "#ffb84d" },
+  dot: { label: "Bleed", color: "#ff6b6b" },
+};
+
+function buffBadges(d, targetType, targetId) {
+  const list = (d && d.buffs || []).filter(
+    (b) => b.targetType === targetType && String(b.targetId) === String(targetId)
+  );
+  if (!list.length) return "";
+  return `<span class="buff-badges">${list
+    .map((b) => {
+      const meta = BUFF_META[b.kind] || { label: b.kind || "?", color: "#ffffff" };
+      const name = escapeHtml(b.name || meta.label);
+      return `<span class="buff-badge" style="--bc:${meta.color}" title="${name} · ${b.turns} turn${b.turns === 1 ? "" : "s"}" data-buff="${escapeHtml(b.kind)}"><em>${escapeHtml(meta.label)}</em><i>${b.turns}</i></span>`;
+    })
+    .join("")}</span>`;
 }
 
 function fxRecipe(effect) {
@@ -254,6 +316,14 @@ function drainCombatFx(root) {
       }
       continue;
     }
+    if (ev.type === "loot") {
+      sfxPlay("lootsound");
+      continue;
+    }
+    if (ev.type === "chest") {
+      sfxPlay("lootsound");
+      continue;
+    }
     let el = null;
     if (ev.target === "enemy") el = root.querySelector('.enemy[data-enemy="' + ev.targetId + '"]');
     else if (ev.target === "player") el = root.querySelector('.fighter[data-fighter="' + ev.targetId + '"]');
@@ -269,26 +339,35 @@ function drainCombatFx(root) {
         spawnPopup(el, "-" + ev.amount, "damage", r.color);
         applyTargetFx(el, r.animation);
         spawnParticles(el, r.particles, r.color);
-        sfxPlay(r.sound);
+        const monsterDefault = ev.source === "monster" && (!ev.elem || ev.elem === "physical");
+        sfxPlay(monsterDefault ? ELEMENT_SOUNDS.monster : ELEMENT_SOUNDS[ev.elem] || r.sound);
       }
     } else if (ev.type === "heal") {
       const r = fxRecipe("heal");
       spawnPopup(el, "+" + ev.amount, "heal", r.color);
       applyTargetFx(el, "heal");
       spawnParticles(el, "glow", r.color);
-      sfxPlay(r.sound);
+      sfxPlay(ELEMENT_SOUNDS.heal || r.sound);
     } else if (ev.type === "defend") {
       const r = fxRecipe("defend");
       spawnPopup(el, "Defended", "defend", r.color);
       applyTargetFx(el, "defend");
       spawnParticles(el, "ring", r.color);
-      sfxPlay(r.sound);
+      sfxPlay(ELEMENT_SOUNDS.defend || r.sound);
+    } else if (ev.type === "buff") {
+      const r = fxRecipe("buff");
+      const meta = BUFF_META[ev.kind] || { label: ev.kind || "Buff", color: r.color };
+      const txt = meta.label + (ev.turns && ev.turns > 1 ? " ×" + ev.turns : "");
+      spawnPopup(el, txt, "buff", meta.color);
+      applyTargetFx(el, "buff");
+      spawnParticles(el, "ring", meta.color);
+      sfxPlay(ELEMENT_SOUNDS.defend || r.sound);
     }
   }
   const last = fx[fx.length - 1];
   if (last && last.type === "result") {
-    if (last.outcome === "victory") playSfx("win");
-    else playSfx("lose");
+    if (last.outcome === "victory") sfxPlay(["winningsound"]);
+    else sfxPlay(["losingsound"]);
   }
 }
 
@@ -372,6 +451,11 @@ function skillIconEl(skill) {
 }
 
 function itemIconEl(item) {
+  if (item.slot === "chest") {
+    const meta = (CATALOG.loot && CATALOG.loot.rarityMeta) || {};
+    const m = meta[item.rarity] || {};
+    return `<span class="item-icon item-icon--chest" style="--rarity:${m.color || "#9aa7b5"}">${icon("chest")}</span>`;
+  }
   return `<span class="item-icon" data-img="${escapeHtml(item.image || "")}" data-variant="${escapeHtml(item.id || "")}"></span>`;
 }
 
@@ -507,6 +591,9 @@ function icon(name) {
     boots: '<path d="M5 21v-6c0-3 2-5 6-5s6 2 6 5v6H5z"/><path d="M9 21v-4"/>',
     amulet: '<circle cx="12" cy="7" r="4"/><path d="M12 11v10"/><path d="M9 18h6"/>',
     ring: '<rect x="7" y="7" width="10" height="10" rx="2" transform="rotate(45 12 12)"/>',
+    crit: '<path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.9L12 17.8 5.8 21l1.2-6.9-5-4.9 6.9-1z"/>',
+    chest: '<rect x="3" y="9" width="18" height="12" rx="2"/><path d="M3 9l9-6 9 6"/><path d="M12 3v6"/><path d="M12 9v6"/><path d="M9 13h6"/>',
+    merchant: '<rect x="3" y="8" width="18" height="13" rx="1"/><path d="M3 8l2-4h14l2 4"/><path d="M8 8a4 4 0 0 0 8 0"/><path d="M9 15h6"/>',
   };
   return `<svg viewBox="0 0 24 24" ${common} aria-hidden="true">${paths[name] || ""}</svg>`;
 }
@@ -522,6 +609,8 @@ function statLabel(key) {
     healPower: "Heal",
     speed: "Spd",
     manaRegen: "Regen",
+    critChance: "Crit",
+    critDamage: "Crit Dmg",
   };
   return map[key] || key;
 }
@@ -567,7 +656,7 @@ function renderProfileCard(room, selfId) {
     <div class="profile-class">${classLabel(me.character)} · Lv ${me.level}</div>
     <div class="profile-trait">${traitHtml}</div>
     <div class="profile-stats">
-      ${statRow("hp", "HP", `${me.hp}/${me.maxHp}`, "bar-hp", pct(me.hp, me.maxHp))}
+      ${statRow("hp", "HP", `${me.maxHp}/${me.maxHp}`, "bar-hp", pct(me.maxHp, me.maxHp))}
       ${statRow("stamina", "Stamina", `${me.stamina}/${me.maxStamina}`, "bar-stamina", pct(me.stamina, me.maxStamina))}
       ${statRow("gold", "Gold", me.gold)}
       ${statRow("wood", "Wood", me.wood)}
@@ -577,17 +666,20 @@ function renderProfileCard(room, selfId) {
       ${chip(icon("level"), `Lv ${me.level}`)}
       ${chip(icon("xp"), `${me.xp}/${me.xpToNext} XP`)}
       ${chip(icon("atk"), `Atk ${me.attack}`)}
-      ${chip(icon("mana"), `${me.mana}/${me.maxMana} Mana`)}
+      ${chip(icon("mana"), `${me.maxMana}/${me.maxMana} Mana`)}
       ${chip(icon("mana"), `Regen ${me.manaRegen}`)}
       ${chip(icon("res"), `Res ${me.resistance}`)}
       ${chip(icon("magic"), `Mgc ${me.magicPower}`)}
       ${chip(icon("heal"), `Heal ${me.healPower}`)}
+      ${chip(icon("crit"), `Crit ${me.critChance}%`)}
+      ${chip(icon("crit"), `Crit Dmg +${me.critDamage}%`)}
       ${chip(icon("food"), `${me.food} Food`)}
     </div>
     <button type="button" class="btn btn--bronze btn--inventory" id="btn-open-inventory">Inventory & Equipment</button>`;
   const invBtn = el.querySelector("#btn-open-inventory");
   if (invBtn) {
     invBtn.addEventListener("click", () => {
+      sfxPlay("inventorysound");
       state.inventoryOpen = true;
       renderTown(state.room);
     });
@@ -598,9 +690,10 @@ function renderProfileCard(room, selfId) {
 const ACTIONS = [
   { id: "dungeon", icon: "dungeon", title: "Dungeon", sub: "Ranked delve · High risk", kind: "open" },
   { id: "search", icon: "search", title: "Search", sub: null, kind: "emit", event: "town:search" },
-  { id: "blacksmith", icon: "smith", title: "Blacksmith", sub: "Buy armor, weapons & gear", kind: "open" },
+  { id: "blacksmith", icon: "smith", title: "Blacksmith", sub: "Armor, weapons & gear", kind: "open" },
+  { id: "merchant", icon: "merchant", title: "Merchant", sub: "Chests, potions & materials", kind: "open" },
   { id: "tavern", icon: "tavern", title: "Tavern", sub: "Bet gold · Coin flip, blackjack & food", kind: "open" },
-  { id: "temple", icon: "temple", title: "Ancient Temple", sub: "Evolve, mend hearts & craft", kind: "open" },
+  { id: "temple", icon: "temple", title: "Ancient Temple", sub: "Ascend, mend hearts & craft", kind: "open" },
   { id: "rest", icon: "rest", title: "Rest", sub: null, kind: "emit", event: "town:rest" },
   { id: "sleep", icon: "rest", title: "Sleep", sub: "End the day · Stamina returns at dawn", kind: "emit", event: "town:endDay" },
 ];
@@ -635,6 +728,7 @@ function renderActionCards(room, selfId) {
         state.dungeonOpen = a.id === "dungeon";
         state.tavernOpen = a.id === "tavern";
         state.blacksmithOpen = a.id === "blacksmith";
+        state.merchantOpen = a.id === "merchant";
         state.templeOpen = a.id === "temple";
         state.inventoryOpen = false;
         renderTown(state.room);
@@ -865,9 +959,12 @@ function renderCombat(room, root) {
       const targetable = canAct && state.selectedSkill && state.selectedSkill.target === "enemy" && !dead;
       return `<button type="button" class="enemy${dead ? " enemy--dead" : ""}${targetable ? " enemy--targetable" : ""}" data-enemy="${i}">
         <span class="portrait portrait--monster monster-portrait" data-img="${imgFor(m.kind, "monster")}" data-variant="monster"></span>
-        <span class="enemy-name">${escapeHtml(m.name)}</span>
-        <span class="hpbar"><span class="hpbar-fill" style="width:${Math.round((m.hp / m.maxHp) * 100)}%"></span></span>
-        <span class="hpnum">${m.hp}/${m.maxHp}</span>
+        <span class="enemy-meta">
+          <span class="enemy-name">${escapeHtml(m.name)}</span>
+          <span class="hpbar"><span class="hpbar-fill" style="width:${Math.round((m.hp / m.maxHp) * 100)}%"></span></span>
+          <span class="hpnum">${m.hp}/${m.maxHp}</span>
+          ${buffBadges(d, "monster", i)}
+        </span>
       </button>`;
     })
     .join("");
@@ -882,8 +979,9 @@ function renderCombat(room, root) {
         <span class="fighter-name">${escapeHtml(p.name)}${p.id === d.leaderId ? " ★" : ""}${isCurrent ? ' <span class="turn-tag">turn</span>' : ""}</span>
         <span class="hpbar"><span class="hpbar-fill hpbar-fill--party" style="width:${Math.round((p.hp / p.maxHp) * 100)}%"></span></span>
         <span class="hpnum">${p.hp}/${p.maxHp}</span>
-        <span class="fighter-stats">Atk ${p.attack} · Res ${p.resistance} · Mgc ${p.magicPower} · Heal ${p.healPower} · Spd ${p.speed}</span>
+        <span class="fighter-stats">Atk ${p.attack} · Res ${p.resistance} · Mgc ${p.magicPower} · Heal ${p.healPower} · Spd ${p.speed} · Crit ${p.critChance}%</span>
         <span class="fighter-mana">Mana ${p.mana}/${p.maxMana}</span>
+        ${buffBadges(d, "player", p.id)}
       </button>`;
     })
     .join("");
@@ -949,7 +1047,7 @@ function renderCombat(room, root) {
       ${timerHtml}
       ${logHtml}
     </div>
-    ${d.result ? renderResultOverlay(d.result) : ""}
+    ${d.result ? renderResultOverlay(d.result, firstChestId(me)) : ""}
   `;
   initImages(root);
   drainCombatFx(root);
@@ -989,7 +1087,10 @@ function renderCombat(room, root) {
   root.querySelectorAll("[data-item]").forEach((b) => {
     b.addEventListener("click", () => {
       if (!canAct) return;
-      socket.emit("combat:useItem", { itemId: b.getAttribute("data-item") });
+      const itemId = b.getAttribute("data-item");
+      socket.emit("combat:useItem", { itemId });
+      if (itemId === "food") sfxPlay("eatingsound");
+      else sfxPlay("potiondrinksound");
       state.timerReset = true;
     });
   });
@@ -998,6 +1099,13 @@ function renderCombat(room, root) {
     endBtn.addEventListener("click", () => {
       state.timerDeadline = null;
       socket.emit("combat:endTurn");
+    });
+  }
+  const openChestBtn = root.querySelector("#btn-result-open-chest");
+  if (openChestBtn) {
+    openChestBtn.addEventListener("click", () => {
+      sfxPlay("lootsound");
+      socket.emit("chest:open", { itemId: openChestBtn.getAttribute("data-chest-id") });
     });
   }
   const ret = root.querySelector("#btn-result-return");
@@ -1012,11 +1120,15 @@ function renderCombat(room, root) {
   }
 }
 
-function renderResultOverlay(result) {
+function renderResultOverlay(result, chestId) {
+  const chestBtn = result.outcome === "victory" && chestId
+    ? `<button type="button" class="btn btn--bronze" id="btn-result-open-chest" data-chest-id="${escapeHtml(chestId)}">Open Chest</button>`
+    : "";
   return `<div class="result-overlay">
     <div class="result-card${result.outcome === "victory" ? " result-card--victory" : " result-card--defeat"}">
       <h3>${result.outcome === "victory" ? "Victory!" : "Defeat"}</h3>
       <p>${escapeHtml(result.text)}</p>
+      ${chestBtn}
       <button type="button" class="btn btn--gold" id="btn-result-return">Return to Town</button>
     </div>
   </div>`;
@@ -1102,6 +1214,14 @@ function itemOwnedQty(me, itemId) {
   return e ? e.qty : 0;
 }
 
+function firstChestId(me) {
+  const e = (me.inventory || []).find((inv) => {
+    const item = CATALOG.items.find((x) => x.id === inv.itemId);
+    return item && item.slot === "chest" && inv.qty > 0;
+  });
+  return e ? e.itemId : null;
+}
+
 function renderTempleView(room) {
   const me = room.players.find((p) => p.id === state.playerId);
   const root = $("temple-content");
@@ -1123,14 +1243,14 @@ function renderTempleView(room) {
   const recipes = temple.recipes || [];
 
   const evolveHtml = `<div class="temple-card">
-    <p class="subhead">Evolve</p>
+    <p class="subhead">Ascension</p>
     ${baseCls && evo ? `
-      <p>At level ${evo.level}, ${escapeHtml(baseCls.label)} may become <strong>${escapeHtml(evo.to.label)}</strong>.</p>
+      <p>At level ${evo.level}, ${escapeHtml(baseCls.label)} may ascend into <strong>${escapeHtml(evo.to.label)}</strong>.</p>
       ${evo.skill ? `<p class="temple-skill">Gains <strong>${escapeHtml(evo.skill.name)}</strong> — ${escapeHtml(evo.skill.description)}</p>` : ""}
       ${evo.bonusText ? `<p class="temple-bonus">${escapeHtml(evo.bonusText)}</p>` : ""}
     ` : `<p>Your class holds no further form.</p>`}
     <p class="temple-req">Requires level ${evo ? evo.level : 20}+ · Ancient Relic (${relicQty} owned)</p>
-    <button type="button" class="btn btn--gold${canEvolve && baseCls && evo ? "" : " btn--mini-disabled"}" id="btn-temple-evolve">Evolve</button>
+    <button type="button" class="btn btn--gold${canEvolve && baseCls && evo ? "" : " btn--mini-disabled"}" id="btn-temple-evolve">Ascend</button>
   </div>`;
 
   const restoreHtml = `<div class="temple-card">
@@ -1180,6 +1300,46 @@ function renderTempleView(room) {
 
 // ---- Shop & Inventory ----
 
+function shopCardHtml(me, staminaOk, item, buyEvent) {
+  const afford = staminaOk && me.gold >= item.price.gold && me.wood >= item.price.wood;
+  const owned = itemOwnedQty(me, item.id);
+  const equipped = !!(me.equipment && Object.values(me.equipment).includes(item.id));
+  const consumable = item.slot === "consumable" || item.slot === "material" || item.slot === "chest";
+  let action;
+  if (consumable) {
+    action = `<button type="button" class="btn btn--mini${afford ? "" : " btn--mini-disabled"}" data-buy="${item.id}">Buy</button>`;
+  } else if (equipped) {
+    action = `<button type="button" class="btn btn--mini btn--mini-disabled" disabled>Equipped ✓</button>`;
+  } else if (owned) {
+    action = `<button type="button" class="btn btn--mini" data-equip="${item.id}">Equip</button>`;
+  } else {
+    action = `<button type="button" class="btn btn--mini${afford ? "" : " btn--mini-disabled"}" data-buy="${item.id}">Buy</button>`;
+  }
+  const ownedBadge = owned > 0
+    ? `<span class="purchased-badge">${equipped ? "Equipped" : `Owned ×${owned}`}</span>`
+    : "";
+  return `<div class="shop-card">
+    <span class="shop-card-top">${itemIconEl(item)}<span class="shop-card-name">${escapeHtml(item.name)}</span></span>
+    <span class="shop-card-badges">${rarityBadge(item)}${ownedBadge}</span>
+    <span class="shop-card-desc">${escapeHtml(item.description)}</span>
+    <span class="shop-card-price">
+      <span class="price-chip">${icon("gold")}<span>${item.price.gold}</span></span>
+      ${item.price.wood ? `<span class="price-chip price-chip--wood">${icon("wood")}<span>${item.price.wood}</span></span>` : ""}
+    </span>
+    ${action}
+  </div>`;
+}
+
+function shopResources(me) {
+  return `
+    <div class="shop-resources">
+      ${chip(icon("gold"), `Gold ${me.gold}`)}
+      ${chip(icon("wood"), `Wood ${me.wood}`)}
+      ${chip(icon("food"), `Food ${me.food}`)}
+      ${chip(icon("stamina"), `Stamina ${me.stamina}`)}
+    </div>`;
+}
+
 function renderBlacksmithView(room) {
   const me = room.players.find((p) => p.id === state.playerId);
   const root = $("blacksmith-content");
@@ -1190,38 +1350,17 @@ function renderBlacksmithView(room) {
   const st = (CATALOG.town && CATALOG.town.blacksmith && CATALOG.town.blacksmith.stamina) || 2;
   const staminaOk = me.stamina >= st;
   const buyable = (CATALOG.loot && CATALOG.loot.buyable) || ["common", "uncommon", "rare"];
-  const gear = (CATALOG.items || []).filter(
-    (i) => i.slot !== "consumable" && i.slot !== "material" && buyable.includes(i.rarity)
-  );
-  const consumables = (CATALOG.items || []).filter(
-    (i) => (i.slot === "consumable" || i.slot === "material") && buyable.includes(i.rarity)
-  );
-
-  const cardHtml = (item) => {
-    const afford = staminaOk && me.gold >= item.price.gold && me.wood >= item.price.wood;
-    return `<div class="shop-card">
-      <span class="shop-card-top">${itemIconEl(item)}<span class="shop-card-name">${escapeHtml(item.name)}</span></span>
-      <span class="shop-card-badges">${rarityBadge(item)}</span>
-      <span class="shop-card-desc">${escapeHtml(item.description)}</span>
-      <span class="shop-card-price">
-        <span class="price-chip">${icon("gold")}<span>${item.price.gold}</span></span>
-        ${item.price.wood ? `<span class="price-chip price-chip--wood">${icon("wood")}<span>${item.price.wood}</span></span>` : ""}
-      </span>
-      <button type="button" class="btn btn--mini${afford ? "" : " btn--mini-disabled"}" data-buy="${item.id}">Buy</button>
-    </div>`;
-  };
+  const stockArr = (room.shopStock && room.shopStock.blacksmith) || [];
+  const gear = stockArr.length
+    ? stockArr.map((id) => (CATALOG.items || []).find((x) => x.id === id)).filter(Boolean)
+    : (CATALOG.items || []).filter(
+        (i) => i.slot !== "consumable" && i.slot !== "material" && i.slot !== "chest" && buyable.includes(i.rarity)
+      );
 
   root.innerHTML = `
-    <div class="shop-resources">
-      ${chip(icon("gold"), `Gold ${me.gold}`)}
-      ${chip(icon("wood"), `Wood ${me.wood}`)}
-      ${chip(icon("food"), `Food ${me.food}`)}
-      ${chip(icon("stamina"), `Stamina ${me.stamina}`)}
-    </div>
+    ${shopResources(me)}
     <p class="subhead">Armor & Weapons</p>
-    <div class="shop-grid">${gear.map(cardHtml).join("") || '<div class="muted">Nothing for sale.</div>'}</div>
-    <p class="subhead">Gear, Consumables & Materials</p>
-    <div class="shop-grid">${consumables.map(cardHtml).join("") || '<div class="muted">Nothing for sale.</div>'}</div>
+    <div class="shop-grid">${gear.map((i) => shopCardHtml(me, staminaOk, i, "blacksmith:buy")).join("") || '<div class="muted">Nothing for sale today.</div>'}</div>
     <div class="btn-row">
       <button type="button" class="btn btn--bronze" id="btn-shop-inventory">Open Inventory</button>
     </div>`;
@@ -1230,8 +1369,58 @@ function renderBlacksmithView(room) {
   root.querySelectorAll("[data-buy]").forEach((b) =>
     b.addEventListener("click", () => socket.emit("blacksmith:buy", { itemId: b.getAttribute("data-buy") }))
   );
+  root.querySelectorAll("[data-equip]").forEach((b) =>
+    b.addEventListener("click", () => {
+      sfxPlay("inventorysound");
+      socket.emit("inventory:equip", { itemId: b.getAttribute("data-equip") });
+    })
+  );
   root.querySelector("#btn-shop-inventory").addEventListener("click", () => {
+    sfxPlay("inventorysound");
     state.blacksmithOpen = false;
+    state.inventoryOpen = true;
+    renderTown(state.room);
+  });
+}
+
+function renderMerchantView(room) {
+  const me = room.players.find((p) => p.id === state.playerId);
+  const root = $("merchant-content");
+  if (!me) {
+    root.innerHTML = "";
+    return;
+  }
+  const st = (CATALOG.town && CATALOG.town.merchant && CATALOG.town.merchant.stamina) || 1;
+  const staminaOk = me.stamina >= st;
+  const buyable = (CATALOG.loot && CATALOG.loot.buyable) || ["common", "uncommon", "rare"];
+  const stockArr = (room.shopStock && room.shopStock.merchant) || [];
+  const goods = stockArr.length
+    ? stockArr.map((id) => (CATALOG.items || []).find((x) => x.id === id)).filter(Boolean)
+    : (CATALOG.items || []).filter(
+        (i) => (i.slot === "consumable" || i.slot === "material" || i.slot === "chest") && buyable.includes(i.rarity)
+      );
+
+  root.innerHTML = `
+    ${shopResources(me)}
+    <p class="subhead">Chests, Potions & Materials</p>
+    <div class="shop-grid">${goods.map((i) => shopCardHtml(me, staminaOk, i, "merchant:buy")).join("") || '<div class="muted">Nothing for sale today.</div>'}</div>
+    <div class="btn-row">
+      <button type="button" class="btn btn--bronze" id="btn-merchant-inventory">Open Inventory</button>
+    </div>`;
+  initImages(root);
+
+  root.querySelectorAll("[data-buy]").forEach((b) =>
+    b.addEventListener("click", () => socket.emit("merchant:buy", { itemId: b.getAttribute("data-buy") }))
+  );
+  root.querySelectorAll("[data-equip]").forEach((b) =>
+    b.addEventListener("click", () => {
+      sfxPlay("inventorysound");
+      socket.emit("inventory:equip", { itemId: b.getAttribute("data-equip") });
+    })
+  );
+  root.querySelector("#btn-merchant-inventory").addEventListener("click", () => {
+    sfxPlay("inventorysound");
+    state.merchantOpen = false;
     state.inventoryOpen = true;
     renderTown(state.room);
   });
@@ -1268,12 +1457,18 @@ function renderInventory(room) {
     .map((inv) => {
       const item = CATALOG.items.find((x) => x.id === inv.itemId);
       if (!item) return "";
-      const equipable = item.slot !== "consumable" && item.slot !== "material";
+      const equipable = item.slot !== "consumable" && item.slot !== "material" && item.slot !== "chest";
+      const isChest = item.slot === "chest";
+      const action = isChest
+        ? `<button type="button" class="btn btn--mini" data-open-chest="${inv.itemId}">Open</button>`
+        : equipable
+        ? `<button type="button" class="btn btn--mini" data-equip="${inv.itemId}">Equip</button>`
+        : "";
       return `<div class="bag-row">
         <span class="bag-icon">${itemIconEl(item)}</span>
         <span class="bag-name">${escapeHtml(item.name)} <span class="bag-qty">×${inv.qty}</span> ${rarityBadge(item)}</span>
         <span class="bag-desc">${escapeHtml(item.description)}</span>
-        ${equipable ? `<button type="button" class="btn btn--mini" data-equip="${inv.itemId}">Equip</button>` : ""}
+        ${action}
       </div>`;
     })
     .join("");
@@ -1291,10 +1486,22 @@ function renderInventory(room) {
   initImages(root);
 
   root.querySelectorAll("[data-unequip]").forEach((b) =>
-    b.addEventListener("click", () => socket.emit("inventory:unequip", { slot: b.getAttribute("data-unequip") }))
+    b.addEventListener("click", () => {
+      sfxPlay("inventorysound");
+      socket.emit("inventory:unequip", { slot: b.getAttribute("data-unequip") });
+    })
   );
   root.querySelectorAll("[data-equip]").forEach((b) =>
-    b.addEventListener("click", () => socket.emit("inventory:equip", { itemId: b.getAttribute("data-equip") }))
+    b.addEventListener("click", () => {
+      sfxPlay("inventorysound");
+      socket.emit("inventory:equip", { itemId: b.getAttribute("data-equip") });
+    })
+  );
+  root.querySelectorAll("[data-open-chest]").forEach((b) =>
+    b.addEventListener("click", () => {
+      sfxPlay("lootsound");
+      socket.emit("chest:open", { itemId: b.getAttribute("data-open-chest") });
+    })
   );
 }
 

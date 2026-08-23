@@ -19,7 +19,8 @@ function idleDungeon() {
     turnOrder: [],
     turnIndex: 0,
     currentTurnId: null,
-    defending: {},
+    buffs: [],
+    buffId: 0,
     endedTurns: new Set(),
     usedSkills: {},
     fx: [],
@@ -143,6 +144,8 @@ function startDungeon(room, player) {
   }
   for (const m of members) {
     spendStamina(m, sizeDef.stamina);
+    m.hp = m.maxHp;
+    m.mana = m.maxMana;
   }
   d.open = false;
   spawnWave(room, d);
@@ -154,6 +157,8 @@ function returnFromDungeon(room, player) {
   if (!d) return null;
   d.memberIds = d.memberIds.filter((id) => id !== player.id);
   player.dungeonId = null;
+  player.hp = player.maxHp;
+  player.mana = player.maxMana;
   if (d.memberIds.length === 0) {
     removeDungeonFromRoom(room, d);
   }
@@ -189,7 +194,7 @@ function publicDungeon(d) {
     turnOrder: d.turnOrder || [],
     turnIndex: d.turnIndex || 0,
     currentTurnId: d.currentTurnId || null,
-    defending: d.defending || {},
+    buffs: d.buffs || [],
     usedSkills: d.usedSkills
       ? Object.fromEntries(Object.entries(d.usedSkills).map(([k, v]) => [k, [...(v || [])]]))
       : {},

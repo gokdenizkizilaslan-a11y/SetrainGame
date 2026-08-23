@@ -7,6 +7,7 @@ const {
 } = require("./constants");
 const { createPlayer, rollStats, publicPlayer, onNewDay } = require("./players");
 const { idleDungeon, publicDungeon } = require("./dungeon");
+const stock = require("./stock");
 
 const rooms = new Map();
 const socketToRoom = new Map();
@@ -52,6 +53,7 @@ function publicRoomState(room) {
     maxPlayers: room.maxPlayers,
     day: room.day,
     log: room.log,
+    shopStock: room.shopStock || null,
     dungeons: (room.dungeons || []).map(publicDungeon),
     players: room.players.map(publicPlayer),
   };
@@ -212,6 +214,7 @@ function startGame(socketId) {
   room.status = "playing";
   room.day = 1;
   room.dungeons = [];
+  stock.init(room);
   room.log = { type: "day", text: "Day 1 — the town stirs. Spend your stamina wisely." };
   for (const p of room.players) {
     rollStats(p);

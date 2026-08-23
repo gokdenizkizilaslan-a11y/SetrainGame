@@ -76,7 +76,9 @@
       "Bash(curl -s -o /dev/null -w \"game:%{http_code}\\\\n\" http://localhost:3000/)",
       "Bash(curl -s -o /dev/null -w \"resultsrv:%{http_code}\\\\n\" http://localhost:3199/result?data=alive)",
       "Bash(NODE_PATH=\"/c/Users/bahad/Desktop/theSetragame/node_modules\" node /c/Users/bahad/AppData/Local/Temp/setratest/cat-test.js)",
-      "Bash(echo \"exit=$?\")"
+      "Bash(echo \"exit=$?\")",
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(curl -s http://localhost:3000/api/catalog)"
     ]
   }
 }

@@ -6,17 +6,17 @@ function evolve(room, player) {
   requirePlaying(room, player);
   const baseCls = getClass(player.character);
   if (!baseCls || !baseCls.evolution) {
-    throw new Error("Your class has no evolution.");
+    throw new Error("Your class has no ascension.");
   }
   if (player.level < (baseCls.evolution.level || 20)) {
-    throw new Error(`You must reach level ${baseCls.evolution.level || 20} to evolve.`);
+    throw new Error(`You must reach level ${baseCls.evolution.level || 20} to ascend.`);
   }
   if (!hasItem(player, "ancient_relic", 1)) {
-    throw new Error("You need an Ancient Relic to evolve.");
+    throw new Error("You need an Ancient Relic to ascend.");
   }
   const evolvedCls = getClass(baseCls.evolution.to);
   if (!evolvedCls) {
-    throw new Error("That evolution is not written in the temple.");
+    throw new Error("That ascension is not written in the temple.");
   }
   spendStamina(player, CONTENT.town.temple.stamina);
   removeItem(player, "ancient_relic", 1);
@@ -34,7 +34,7 @@ function evolve(room, player) {
       player.skillLoadout.push(id);
     }
   }
-  return { type: "temple", text: `You evolve into ${evolvedCls.label}!` };
+  return { type: "temple", text: `You ascend into ${evolvedCls.label}!` };
 }
 
 function restoreHeart(room, player) {

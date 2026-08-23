@@ -59,6 +59,8 @@ function rollStats(player) {
   player.resistance = rollRange(cls.resistance);
   player.magicPower = rollRange(cls.magicPower);
   player.healPower = cls.healPower ? rollRange(cls.healPower) : 0;
+  player.critChance = cls.critChance ? rollRange(cls.critChance) : (CONTENT.combat.critChance || 0) * 100;
+  player.critDamage = cls.critDamage ? rollRange(cls.critDamage) : Math.round(((CONTENT.combat.critMult || 1.5) - 1) * 100);
   applyAnomalyStatBonus(player);
   return player;
 }
@@ -80,6 +82,8 @@ function applyClassGrowth(player) {
   player.resistance += g.resistance;
   player.magicPower += g.magicPower;
   player.healPower += g.healPower || 0;
+  player.critChance = (player.critChance || 0) + (g.critChance || 0);
+  player.critDamage = (player.critDamage || 0) + (g.critDamage || 0);
 }
 
 function addXp(player, amount) {
@@ -132,6 +136,8 @@ function createPlayer({ id, name, character, isHost = false }) {
     magicPower: 0,
     healPower: 0,
     speed: 0,
+    critChance: 0,
+    critDamage: 0,
     manaRegen: (CONTENT.combat.manaRegenPerRound || 3) + (cls && cls.manaRegen ? cls.manaRegen : 0),
     level: 1,
     xp: 0,
@@ -170,6 +176,8 @@ function publicPlayer(player) {
     magicPower: player.magicPower,
     healPower: player.healPower || 0,
     speed: player.speed,
+    critChance: player.critChance || 0,
+    critDamage: player.critDamage || 0,
     manaRegen: player.manaRegen || (CONTENT.combat.manaRegenPerRound || 3),
     level: player.level,
     xp: player.xp,
@@ -280,6 +288,10 @@ function applyStatDelta(player, stats, sign) {
       player.healPower += sign * n;
     } else if (key === "speed") {
       player.speed += sign * n;
+    } else if (key === "critChance") {
+      player.critChance = (player.critChance || 0) + sign * n;
+    } else if (key === "critDamage") {
+      player.critDamage = (player.critDamage || 0) + sign * n;
     } else if (key === "manaRegen") {
       player.manaRegen += sign * n;
     }
@@ -291,7 +303,7 @@ function equipItem(player, itemId) {
   if (!item) {
     throw new Error("Unknown item.");
   }
-  if (item.slot === "consumable") {
+  if (item.slot === "consumable" || item.slot === "chest") {
     throw new Error("That cannot be equipped.");
   }
   const owned = player.inventory.find((i) => i.itemId === itemId);
