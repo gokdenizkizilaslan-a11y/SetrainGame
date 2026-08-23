@@ -12,7 +12,17 @@ function applyCatalog(cat) {
 }
 
 function $(id) {
-  return document.getElementById(id);
+  const el = document.getElementById(id);
+  if (!el) {
+    return {
+      addEventListener: () => {},
+      classList: { add: () => {}, remove: () => {}, toggle: () => {} },
+      style: {},
+      setAttribute: () => {},
+      removeAttribute: () => {},
+    };
+  }
+  return el;
 }
 
 function showScreen(id) {

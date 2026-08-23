@@ -240,12 +240,6 @@ $("btn-start").addEventListener("click", () => {
   socket.emit("game:start");
 });
 
-$("btn-dungeon-close").addEventListener("click", () => {
-  state.dungeonOpen = false;
-  state.pendingFx = [];
-  stopCombatTimer();
-  renderTown(state.room);
-});
 
 
 $("btn-boss-map").addEventListener("click", () => {
