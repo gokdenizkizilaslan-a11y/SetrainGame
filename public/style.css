@@ -324,6 +324,36 @@ input:focus {
   background: var(--gold-soft);
 }
 
+/* Sticky Go Back button for overlay views */
+.go-back-btn {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 1000;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  background: var(--glass-2);
+  border: 1px solid var(--glass-line);
+  color: var(--gold-bright);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  font-family: "Cinzel", serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+
+.go-back-btn:hover:not(:disabled) {
+  border-color: var(--gold-bright);
+  background: var(--gold-soft);
+  transform: translateY(-1px);
+}
+
+.go-back-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
 .btn--ready {
   background: linear-gradient(180deg, #8fc97a, #4e7a2c);
   border-color: rgba(220, 255, 200, 0.35);
@@ -1301,6 +1331,14 @@ input:focus {
 
 .overlay-view {
   padding-top: 0.2rem;
+  height: calc(100vh - 6.8rem);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.overlay-view.no-scroll {
+  overflow: hidden;
 }
 
 .overlay-head {
@@ -1308,6 +1346,21 @@ input:focus {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.4rem;
+  flex-shrink: 0;
+}
+
+.overlay-body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.overlay-body.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.overlay-body.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 .dungeon-menu-header {
@@ -1547,6 +1600,204 @@ input:focus {
   color: var(--drop);
 }
 
+/* Dungeon Split View: 3x5 grid left, forming parties right */
+.dungeon-split-view {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1rem;
+  height: calc(100vh - 8rem);
+  min-height: 500px;
+}
+
+.dungeon-list-section {
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.dungeon-list-section.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.dungeon-list-section.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.dungeon-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.dungeon-grid > * {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.dungeon-rooms-section {
+  background: var(--glass-2);
+  border: 1px solid var(--glass-line);
+  border-radius: 16px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+  max-height: 100%;
+}
+
+.dungeon-rooms-header h3 {
+  font-family: "Cinzel", serif;
+  font-size: 1rem;
+  color: var(--gold-bright);
+  margin: 0 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--glass-line);
+}
+
+.dungeon-rooms-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 14rem);
+}
+
+.dungeon-rooms-list.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.dungeon-rooms-list.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.dungeon-room-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  border-radius: 12px;
+}
+
+.dungeon-room-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dungeon-room-rank {
+  font-family: "Cinzel", serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.dungeon-room-rank .rank-badge {
+  font-size: 0.6rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: var(--gold-soft);
+  color: var(--gold-bright);
+  margin-left: 0.4rem;
+}
+
+.dungeon-room-size {
+  font-size: 0.65rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dungeon-room-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+}
+
+.dungeon-room-leader {
+  font-weight: 600;
+  color: var(--gold-bright);
+}
+
+.dungeon-room-count {
+  color: var(--muted);
+}
+
+.dungeon-room-players {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.dungeon-room-player-tag {
+  font-size: 0.6rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 999px;
+  background: var(--gold-soft);
+  color: var(--gold-bright);
+  border: 1px solid var(--glass-line);
+}
+
+.dungeon-room-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--glass-line);
+}
+
+.dungeon-room-btn {
+  flex: 1;
+  padding: 0.5rem;
+  font-size: 0.7rem;
+  border-radius: 8px;
+}
+
+.dungeon-room-btn.join {
+  background: var(--gold-soft);
+  border: 1px solid var(--gold-line);
+  color: var(--gold-bright);
+}
+
+.dungeon-room-btn.join:hover:not(:disabled) {
+  background: var(--gold-bright);
+  color: #1a1005;
+}
+
+.dungeon-room-btn.start {
+  background: linear-gradient(180deg, #e8b45c, #c9933f);
+  border: 1px solid rgba(232, 180, 92, 0.5);
+  color: #1a1005;
+}
+
+.dungeon-room-btn.leave {
+  background: rgba(226, 96, 74, 0.15);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+}
+
+.dungeon-room-btn.leave:hover:not(:disabled) {
+  background: var(--danger);
+  color: #fff;
+}
+
+.dungeon-room-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dungeon-rooms-empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 2rem;
+  font-style: italic;
+}
+
 .party-list {
   list-style: none;
   margin: 0.6rem 0;
@@ -1625,16 +1876,20 @@ input:focus {
   overflow: hidden;
   width: 100%;
   max-width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .enemy .monster-portrait {
-  width: 100%;
-  height: 7.5rem;
-  border-radius: 0;
-  border: none;
-  box-shadow: none;
+  width: 6rem;
+  height: 6rem;
+  border-radius: 12px;
+  border: 2px solid var(--glass-line);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   background-size: cover;
   background-position: center;
+  flex-shrink: 0;
+  align-self: center;
 }
 
 .enemy-meta {
@@ -1644,6 +1899,7 @@ input:focus {
   gap: 0.3rem;
   width: 100%;
   padding: 0.6rem 0.7rem 0.7rem;
+  flex: 1;
 }
 
 .fighter--turn {

@@ -285,6 +285,26 @@ $("chat-text").addEventListener("keydown", (e) => {
 });
 $("chat-toggle").addEventListener("click", toggleChat);
 
+// Go Back button (sticky, works on all overlay views)
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".go-back-btn");
+  if (!btn) return;
+  const target = btn.getAttribute("data-target");
+  if (target === "town") {
+    state.dungeonOpen = false;
+    state.tavernOpen = false;
+    state.blacksmithOpen = false;
+    state.merchantOpen = false;
+    state.templeOpen = false;
+    state.inventoryOpen = false;
+    state.bossOpen = false;
+    state.selectedSkill = null;
+    state.pendingFx = [];
+    stopCombatTimer();
+    renderTown(state.room);
+  }
+});
+
 // ---- Edge buttons: main menu + sound ----
 
 function leaveToMainMenu() {

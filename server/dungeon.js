@@ -74,7 +74,8 @@ function joinDungeon(room, player, rank, size) {
   if (existing) {
     return existing;
   }
-  const party = (room.dungeons || []).find(
+  // First, try to find an exact match (same rank + size)
+  let party = (room.dungeons || []).find(
     (d) =>
       d.status === "forming" &&
       d.open &&
@@ -82,6 +83,16 @@ function joinDungeon(room, player, rank, size) {
       d.size === sizeDef.id &&
       d.memberIds.length < room.maxPlayers
   );
+  // If no exact match, find any forming dungeon of the same rank (auto-join leader's size)
+  if (!party) {
+    party = (room.dungeons || []).find(
+      (d) =>
+        d.status === "forming" &&
+        d.open &&
+        d.rank === dungeonDef.rank &&
+        d.memberIds.length < room.maxPlayers
+    );
+  }
   if (party) {
     party.memberIds.push(player.id);
     player.dungeonId = party.id;

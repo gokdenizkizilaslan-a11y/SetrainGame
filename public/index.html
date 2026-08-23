@@ -157,57 +157,81 @@
         <div id="dungeon-view" class="overlay-view hidden">
           <div class="overlay-head">
             <p class="eyebrow">Dungeon</p>
-            <button type="button" class="btn btn--ghost" id="btn-dungeon-close">Back to Town</button>
+            <button type="button" class="btn btn--ghost go-back-btn" data-target="town">← Back</button>
           </div>
-          <div id="dungeon-content"></div>
+          <div class="overlay-body no-scrollbar">
+            <div id="dungeon-content" class="dungeon-split-view">
+              <div class="dungeon-list-section">
+                <div id="dungeon-list"></div>
+              </div>
+              <div class="dungeon-rooms-section">
+                <div class="dungeon-rooms-header">
+                  <h3>Forming Parties</h3>
+                </div>
+                <div id="dungeon-rooms-list"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div id="tavern-view" class="overlay-view hidden">
           <div class="overlay-head">
             <p class="eyebrow">The Tavern</p>
-            <button type="button" class="btn btn--ghost" id="btn-tavern-close">Back to Town</button>
+            <button type="button" class="btn btn--ghost go-back-btn" data-target="town">← Back</button>
           </div>
-          <div id="tavern-content"></div>
+          <div class="overlay-body no-scrollbar">
+            <div id="tavern-content"></div>
+          </div>
         </div>
 
         <div id="blacksmith-view" class="overlay-view hidden">
           <div class="overlay-head">
             <p class="eyebrow">The Blacksmith</p>
-            <button type="button" class="btn btn--ghost" id="btn-blacksmith-close">Back to Town</button>
+            <button type="button" class="btn btn--ghost go-back-btn" data-target="town">← Back</button>
           </div>
-          <div id="blacksmith-content"></div>
+          <div class="overlay-body no-scrollbar">
+            <div id="blacksmith-content"></div>
+          </div>
         </div>
 
         <div id="merchant-view" class="overlay-view hidden">
           <div class="overlay-head">
             <p class="eyebrow">The Merchant</p>
-            <button type="button" class="btn btn--ghost" id="btn-merchant-close">Back to Town</button>
+            <button type="button" class="btn btn--ghost go-back-btn" data-target="town">← Back</button>
           </div>
-          <div id="merchant-content"></div>
+          <div class="overlay-body no-scrollbar">
+            <div id="merchant-content"></div>
+          </div>
         </div>
 
         <div id="inventory-view" class="overlay-view hidden">
           <div class="overlay-head">
             <p class="eyebrow">Inventory</p>
-            <button type="button" class="btn btn--ghost" id="btn-inventory-close">Back to Town</button>
+            <button type="button" class="btn btn--ghost go-back-btn" data-target="town">← Back</button>
           </div>
-          <div id="inventory-content"></div>
+          <div class="overlay-body no-scrollbar">
+            <div id="inventory-content"></div>
+          </div>
         </div>
 
         <div id="temple-view" class="overlay-view hidden">
           <div class="overlay-head">
             <p class="eyebrow">The Ancient Temple</p>
-            <button type="button" class="btn btn--ghost" id="btn-temple-close">Back to Town</button>
+            <button type="button" class="btn btn--ghost go-back-btn" data-target="town">← Back</button>
           </div>
-          <div id="temple-content"></div>
+          <div class="overlay-body no-scrollbar">
+            <div id="temple-content"></div>
+          </div>
         </div>
 
         <div id="boss-view" class="overlay-view hidden">
           <div class="overlay-head">
             <p class="eyebrow">Boss Map</p>
-            <button type="button" class="btn btn--ghost" id="btn-boss-close">Back to Town</button>
+            <button type="button" class="btn btn--ghost go-back-btn" data-target="town">← Back</button>
           </div>
-          <div id="boss-content"></div>
+          <div class="overlay-body no-scrollbar">
+            <div id="boss-content"></div>
+          </div>
         </div>
       </div>
     </section>

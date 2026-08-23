@@ -780,10 +780,9 @@ function myDungeon(room) {
 
 function renderDungeonView(room) {
   const d = myDungeon(room);
-  const root = $("dungeon-content");
-  if (!d || d.status === "idle") return renderDungeonMenu(room, root);
-  if (d.status === "forming") return renderDungeonParty(room, root);
-  if (d.status === "fighting" || d.status === "done") return renderCombat(room, root);
+  if (!d || d.status === "idle") return renderDungeonMenu(room);
+  if (d.status === "forming") return renderDungeonParty(room);
+  if (d.status === "fighting" || d.status === "done") return renderCombat(room);
 }
 
 function rarityMetaOf(r) {
@@ -811,13 +810,17 @@ function dungeonDrops(rank) {
   return { pool, perKill, odds };
 }
 
-function renderDungeonMenu(room, root) {
+function renderDungeonMenu(room) {
   const sortedDungeons = [...CATALOG.dungeons].sort((a, b) => (a.displayOrder || 999) - (b.displayOrder || 999));
-  root.innerHTML =
+  const listRoot = $("dungeon-list");
+  const roomsRoot = $("dungeon-rooms-list");
+  
+  // Left: 3x5 dungeon grid
+  listRoot.innerHTML =
     `<div class="dungeon-menu-header">
       <p class="eyebrow">Dungeons</p>
       <h2>Choose a Delve</h2>
-      <p class="lead">Pick a dungeon, then a size. Match a friend's choice to join their party — otherwise it's your own solo delve.</p>
+      <p class="lead">Pick a dungeon, then a size. Match a friend's choice to join their party.</p>
     </div>` +
     `<div class="dungeon-grid">` +
     sortedDungeons
@@ -837,15 +840,98 @@ function renderDungeonMenu(room, root) {
       })
       .join("") +
     `</div>`;
-  root.querySelectorAll("[data-rank]").forEach((b) =>
-    b.addEventListener("click", () => renderSizeGrid(room, root, b.getAttribute("data-rank")))
+  
+  listRoot.querySelectorAll("[data-rank]").forEach((b) =>
+    b.addEventListener("click", () => renderDungeonSizeModal(room, b.getAttribute("data-rank")))
   );
-  initImages(root);
+  
+  // Right: Forming parties panel (all ranks)
+  renderDungeonRoomsPanel(room, roomsRoot);
+  
+  initImages(listRoot);
+  initImages(roomsRoot);
 }
 
-function renderSizeGrid(room, root, rank) {
+function renderDungeonRoomsPanel(room, root) {
+  if (!root) return;
+  
+  const formingDungeons = (room.dungeons || []).filter(
+    (d) => d.status === "forming" && d.open && d.memberIds.length > 0
+  );
+  
+  if (!formingDungeons.length) {
+    root.innerHTML = `<div class="dungeon-rooms-empty">No forming parties. Create one by selecting a dungeon.</div>`;
+    return;
+  }
+  
+  const me = room.players.find((p) => p.id === state.playerId);
+  
+  root.innerHTML = formingDungeons.map((d) => {
+    const def = CATALOG.dungeons.find((x) => x.rank === d.rank);
+    const sizeDef = CATALOG.sizes.find((x) => x.id === d.size);
+    const leader = room.players.find((p) => p.id === d.leaderId);
+    const isLeader = d.leaderId === state.playerId;
+    const isMember = d.memberIds.includes(state.playerId);
+    const memberCount = d.memberIds.length;
+    const maxPlayers = room.maxPlayers || 8;
+    
+    return `
+      <div class="dungeon-room-card" data-dungeon-id="${d.id}">
+        <div class="dungeon-room-header">
+          <span class="dungeon-room-rank">
+            ${escapeHtml(def?.label || d.rank)}
+            <span class="rank-badge">${escapeHtml(sizeDef?.label || d.size)}</span>
+          </span>
+          <span class="dungeon-room-size">${escapeHtml(sizeDef?.label || d.size)}</span>
+        </div>
+        <div class="dungeon-room-meta">
+          <span class="dungeon-room-leader">Leader: ${escapeHtml(leader?.name || "Unknown")}</span>
+          <span class="dungeon-room-count">${memberCount}/${maxPlayers}</span>
+        </div>
+        <div class="dungeon-room-players">
+          ${d.memberIds.map((id) => {
+            const p = room.players.find((pl) => pl.id === id);
+            return p ? `<span class="dungeon-room-player-tag">${escapeHtml(p.name)}${p.id === state.playerId ? " (You)" : ""}</span>` : "";
+          }).join("")}
+        </div>
+        <div class="dungeon-room-actions">
+          ${isLeader ? `
+            <button type="button" class="btn btn--mini dungeon-room-btn start" data-action="start" data-dungeon-id="${d.id}">Start Delve</button>
+            <button type="button" class="btn btn--mini dungeon-room-btn leave" data-action="leave" data-dungeon-id="${d.id}">Leave</button>
+          ` : isMember ? `
+            <button type="button" class="btn btn--mini dungeon-room-btn leave" data-action="leave" data-dungeon-id="${d.id}">Leave Party</button>
+          ` : `
+            <button type="button" class="btn btn--mini dungeon-room-btn join" data-action="join" data-dungeon-id="${d.id}" ${memberCount >= maxPlayers ? "disabled" : ""}>Join Party</button>
+          `}
+        </div>
+      </div>
+    `;
+  }).join("");
+  
+  root.querySelectorAll(".dungeon-room-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const action = btn.getAttribute("data-action");
+      const dungeonId = btn.getAttribute("data-dungeon-id");
+      const dungeon = room.dungeons.find((d) => d.id === dungeonId);
+      if (!dungeon) return;
+      
+      if (action === "join") {
+        socket.emit("dungeon:join", { rank: dungeon.rank, size: dungeon.size });
+      } else if (action === "leave") {
+        socket.emit("dungeon:leave");
+      } else if (action === "start") {
+        socket.emit("dungeon:start");
+      }
+    });
+  });
+}
+
+function renderDungeonSizeModal(room, rank) {
   const dg = CATALOG.dungeons.find((x) => x.rank === rank);
   const drops = dungeonDrops(rank);
+  const listRoot = $("dungeon-list");
+  const roomsRoot = $("dungeon-rooms-list");
+  
   const chip = (o, text) =>
     `<span class="drop-chip" style="--drop:${rarityMetaOf(o.rarity).color || "#9aa7b5"}">${escapeHtml(text)}</span>`;
   const monsterChips = drops.pool
@@ -865,8 +951,9 @@ function renderSizeGrid(room, root, rank) {
         <div class="drop-row"><span class="drop-label">Item rarity</span><span class="drop-chips">${oddsLine}</span></div>
       </div>`
     : "";
-  root.innerHTML =
-    `<button type="button" class="btn btn--ghost" id="btn-back-ranks">← All Dungeons</button>` +
+  
+  listRoot.innerHTML =
+    `<button type="button" class="btn btn--ghost" id="btn-back-dungeons">← All Dungeons</button>` +
     `<p class="subhead">${escapeHtml(dg.label)} — choose a size</p>` +
     `<div class="size-grid">` +
     CATALOG.sizes
@@ -880,38 +967,186 @@ function renderSizeGrid(room, root, rank) {
       .join("") +
     `</div>` +
     panel;
-  root.querySelectorAll("[data-size]").forEach((b) =>
+  
+  listRoot.querySelectorAll("[data-size]").forEach((b) =>
     b.addEventListener("click", () => socket.emit("dungeon:join", { rank, size: b.getAttribute("data-size") }))
   );
-  root.querySelector("#btn-back-ranks").addEventListener("click", () => renderDungeonMenu(room, root));
+  listRoot.querySelector("#btn-back-dungeons").addEventListener("click", () => renderDungeonMenu(room));
+  
+  // Right panel: show forming parties for this specific rank
+  const formingForRank = (room.dungeons || []).filter(
+    (d) => d.status === "forming" && d.open && d.rank === rank && d.memberIds.length > 0
+  );
+  
+  if (!formingForRank.length) {
+    roomsRoot.innerHTML = `<div class="dungeon-rooms-empty">No parties forming for this dungeon yet. Be the first!</div>`;
+    return;
+  }
+  
+  const me = room.players.find((p) => p.id === state.playerId);
+  
+  roomsRoot.innerHTML = formingForRank.map((d) => {
+    const sizeDef = CATALOG.sizes.find((x) => x.id === d.size);
+    const leader = room.players.find((p) => p.id === d.leaderId);
+    const isLeader = d.leaderId === state.playerId;
+    const isMember = d.memberIds.includes(state.playerId);
+    const memberCount = d.memberIds.length;
+    const maxPlayers = room.maxPlayers || 8;
+    
+    return `
+      <div class="dungeon-room-card" data-dungeon-id="${d.id}">
+        <div class="dungeon-room-header">
+          <span class="dungeon-room-rank">${escapeHtml(dg.label)} <span class="rank-badge">${escapeHtml(sizeDef?.label || d.size)}</span></span>
+        </div>
+        <div class="dungeon-room-meta">
+          <span class="dungeon-room-leader">Leader: ${escapeHtml(leader?.name || "Unknown")}</span>
+          <span class="dungeon-room-count">${memberCount}/${maxPlayers}</span>
+        </div>
+        <div class="dungeon-room-players">
+          ${d.memberIds.map((id) => {
+            const p = room.players.find((pl) => pl.id === id);
+            return p ? `<span class="dungeon-room-player-tag">${escapeHtml(p.name)}${p.id === state.playerId ? " (You)" : ""}</span>` : "";
+          }).join("")}
+        </div>
+        <div class="dungeon-room-actions">
+          ${isLeader ? `
+            <button type="button" class="btn btn--mini dungeon-room-btn start" data-action="start" data-dungeon-id="${d.id}">Start Delve</button>
+            <button type="button" class="btn btn--mini dungeon-room-btn leave" data-action="leave" data-dungeon-id="${d.id}">Leave</button>
+          ` : isMember ? `
+            <button type="button" class="btn btn--mini dungeon-room-btn leave" data-action="leave" data-dungeon-id="${d.id}">Leave Party</button>
+          ` : `
+            <button type="button" class="btn btn--mini dungeon-room-btn join" data-action="join" data-dungeon-id="${d.id}" ${memberCount >= maxPlayers ? "disabled" : ""}>Join Party</button>
+          `}
+        </div>
+      </div>
+    `;
+  }).join("");
+  
+  roomsRoot.querySelectorAll(".dungeon-room-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const action = btn.getAttribute("data-action");
+      const dungeonId = btn.getAttribute("data-dungeon-id");
+      const dungeon = room.dungeons.find((d) => d.id === dungeonId);
+      if (!dungeon) return;
+      
+      if (action === "join") {
+        socket.emit("dungeon:join", { rank: dungeon.rank, size: dungeon.size });
+      } else if (action === "leave") {
+        socket.emit("dungeon:leave");
+      } else if (action === "start") {
+        socket.emit("dungeon:start");
+      }
+    });
+  });
+  
+  initImages(listRoot);
+  initImages(roomsRoot);
 }
 
-function renderDungeonParty(room, root) {
+function renderDungeonParty(room) {
   const d = myDungeon(room);
+  if (!d) return;
+  
   const members = (d.memberIds || []).map((id) => room.players.find((p) => p.id === id)).filter(Boolean);
   const isLeader = d.leaderId === state.playerId;
-  root.innerHTML = `
-    <p class="subhead">${escapeHtml(d.label || "")} — ${sizeLabel(d.size)}</p>
-    <p class="lead">The first to join leads. The leader starts the delve; allies need only be here. Others can join by choosing the same dungeon + size.</p>
-    <ul class="party-list">
-      ${members
-        .map(
-          (m) => `<li>
-            <span class="party-list-name">${escapeHtml(m.name)}</span>
-            ${m.id === d.leaderId ? ' <span class="badge badge--host">Leader</span>' : ""}
-            ${m.id === state.playerId ? ' <span class="badge">You</span>' : ""}
-            <span class="player-meta">${classLabel(m.character)} · ${m.hp}/${m.maxHp} HP</span>
-          </li>`
-        )
-        .join("")}
-    </ul>
-    <div class="btn-row">
-      <button type="button" class="btn btn--ghost" id="btn-party-leave">Leave Party</button>
-      ${isLeader ? `<button type="button" class="btn btn--gold" id="btn-party-start">Start Delve (${d.stamina} stamina)</button>` : ""}
-    </div>`;
-  root.querySelector("#btn-party-leave").addEventListener("click", () => socket.emit("dungeon:leave"));
-  const start = root.querySelector("#btn-party-start");
+  const def = CATALOG.dungeons.find((x) => x.rank === d.rank);
+  const sizeDef = CATALOG.sizes.find((x) => x.id === d.size);
+  
+  const listRoot = $("dungeon-list");
+  const roomsRoot = $("dungeon-rooms-list");
+  
+  // Left: Dungeon info
+  listRoot.innerHTML = `
+    <div class="dungeon-menu-header">
+      <p class="eyebrow">${escapeHtml(d.label || def?.label || "")}</p>
+      <h2>${escapeHtml(sizeDef?.label || d.size)}</h2>
+      <p class="lead">The first to join leads. The leader starts the delve; allies need only be here. Others can join by choosing the same dungeon + size.</p>
+    </div>
+    <div class="dungeon-info-panel">
+      <ul class="party-list">
+        ${members
+          .map(
+            (m) => `<li>
+              <span class="party-list-name">${escapeHtml(m.name)}</span>
+              ${m.id === d.leaderId ? ' <span class="badge badge--host">Leader</span>' : ""}
+              ${m.id === state.playerId ? ' <span class="badge">You</span>' : ""}
+              <span class="player-meta">${classLabel(m.character)} · ${m.hp}/${m.maxHp} HP</span>
+            </li>`
+          )
+          .join("")}
+      </ul>
+      <div class="btn-row">
+        <button type="button" class="btn btn--ghost" id="btn-party-leave">Leave Party</button>
+        ${isLeader ? `<button type="button" class="btn btn--gold" id="btn-party-start">Start Delve (${d.stamina} stamina)</button>` : ""}
+      </div>`;
+  
+  listRoot.querySelector("#btn-party-leave").addEventListener("click", () => socket.emit("dungeon:leave"));
+  const start = listRoot.querySelector("#btn-party-start");
   if (start) start.addEventListener("click", () => socket.emit("dungeon:start"));
+  
+  // Right: Other forming parties for this rank+size
+  const formingForRank = (room.dungeons || []).filter(
+    (dg) => dg.status === "forming" && dg.open && dg.rank === d.rank && dg.size === d.size && dg.id !== d.id && dg.memberIds.length > 0
+  );
+  
+  if (!formingForRank.length) {
+    roomsRoot.innerHTML = `<div class="dungeon-rooms-empty">No other parties forming for this dungeon.</div>`;
+    return;
+  }
+  
+  const me = room.players.find((p) => p.id === state.playerId);
+  
+  roomsRoot.innerHTML = formingForRank.map((dg) => {
+    const leader = room.players.find((p) => p.id === dg.leaderId);
+    const isLeaderOther = dg.leaderId === state.playerId;
+    const isMemberOther = dg.memberIds.includes(state.playerId);
+    const memberCount = dg.memberIds.length;
+    const maxPlayers = room.maxPlayers || 8;
+    
+    return `
+      <div class="dungeon-room-card" data-dungeon-id="${dg.id}">
+        <div class="dungeon-room-header">
+          <span class="dungeon-room-rank">${escapeHtml(sizeDef?.label || d.size)}</span>
+          <span class="dungeon-room-size">Other Party</span>
+        </div>
+        <div class="dungeon-room-meta">
+          <span class="dungeon-room-leader">Leader: ${escapeHtml(leader?.name || "Unknown")}</span>
+          <span class="dungeon-room-count">${memberCount}/${maxPlayers}</span>
+        </div>
+        <div class="dungeon-room-players">
+          ${dg.memberIds.map((id) => {
+            const p = room.players.find((pl) => pl.id === id);
+            return p ? `<span class="dungeon-room-player-tag">${escapeHtml(p.name)}${p.id === state.playerId ? " (You)" : ""}</span>` : "";
+          }).join("")}
+        </div>
+        <div class="dungeon-room-actions">
+          ${isMemberOther ? `
+            <button type="button" class="btn btn--mini dungeon-room-btn leave" data-action="leave" data-dungeon-id="${dg.id}">Leave Party</button>
+          ` : `
+            <button type="button" class="btn btn--mini dungeon-room-btn join" data-action="join" data-dungeon-id="${dg.id}" ${memberCount >= maxPlayers ? "disabled" : ""}>Join</button>
+          `}
+        </div>
+      </div>
+    `;
+  }).join("");
+  
+  roomsRoot.querySelectorAll(".dungeon-room-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const action = btn.getAttribute("data-action");
+      const dungeonId = btn.getAttribute("data-dungeon-id");
+      const dungeon = room.dungeons.find((d) => d.id === dungeonId);
+      if (!dungeon) return;
+      
+      if (action === "join") {
+        socket.emit("dungeon:join", { rank: dungeon.rank, size: dungeon.size });
+      } else if (action === "leave") {
+        socket.emit("dungeon:leave");
+      }
+    });
+  });
+  
+  initImages(listRoot);
+  initImages(roomsRoot);
 }
 
 function combatLoadout(me) {
@@ -1064,7 +1299,7 @@ function renderCombat(room, root) {
       const id = b.getAttribute("data-skill");
       const basic = (CATALOG.classes.find((c) => c.slug === me.character) || {}).basicAttack;
       const chosen = basic && basic.id === id ? { ...basic, target: "enemy", mana: 0 } : CATALOG.skills.find((s) => s.id === id);
-      if (!chosen || !canAct || me.mana < (chosen.mana || 0) || usedIds.includes(id)) return;
+      if (!chosen || !canAct || me.hp <= 0 || me.mana < (chosen.mana || 0) || usedIds.includes(id)) return;
       if (chosen.target === "self" || chosen.target === "party") {
         socket.emit("combat:act", { skillId: chosen.id, targetId: me.id });
         state.selectedSkill = null;
@@ -1077,7 +1312,7 @@ function renderCombat(room, root) {
   });
   root.querySelectorAll("[data-enemy]").forEach((b) => {
     b.addEventListener("click", () => {
-      if (!canAct || !state.selectedSkill || state.selectedSkill.target !== "enemy") return;
+      if (!canAct || me.hp <= 0 || !state.selectedSkill || state.selectedSkill.target !== "enemy") return;
       socket.emit("combat:act", { skillId: state.selectedSkill.id, targetId: b.getAttribute("data-enemy") });
       state.selectedSkill = null;
       state.timerReset = true;
@@ -1085,7 +1320,7 @@ function renderCombat(room, root) {
   });
   root.querySelectorAll("[data-fighter]").forEach((b) => {
     b.addEventListener("click", () => {
-      if (!canAct || !state.selectedSkill || state.selectedSkill.target !== "ally") return;
+      if (!canAct || me.hp <= 0 || !state.selectedSkill || state.selectedSkill.target !== "ally") return;
       socket.emit("combat:act", { skillId: state.selectedSkill.id, targetId: b.getAttribute("data-fighter") });
       state.selectedSkill = null;
       state.timerReset = true;
@@ -1093,7 +1328,7 @@ function renderCombat(room, root) {
   });
   root.querySelectorAll("[data-item]").forEach((b) => {
     b.addEventListener("click", () => {
-      if (!canAct) return;
+      if (!canAct || me.hp <= 0) return;
       const itemId = b.getAttribute("data-item");
       socket.emit("combat:useItem", { itemId });
       if (itemId === "food") sfxPlay("eatingsound");
@@ -1104,6 +1339,7 @@ function renderCombat(room, root) {
   const endBtn = root.querySelector("#btn-end-turn");
   if (endBtn) {
     endBtn.addEventListener("click", () => {
+      if (me.hp <= 0) return;
       state.timerDeadline = null;
       socket.emit("combat:endTurn");
     });
