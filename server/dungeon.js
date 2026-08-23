@@ -33,7 +33,7 @@ function idleDungeon() {
 }
 
 function delveUnderway(dungeon) {
-  return dungeon.status === "fighting" || dungeon.status === "done";
+  return dungeon.status === "fighting";
 }
 
 function dungeonFor(room, player) {
@@ -117,7 +117,7 @@ function joinDungeon(room, player, rank, size) {
 function leaveDungeon(room, player) {
   const d = dungeonFor(room, player);
   if (!d) return null;
-  if (delveUnderway(d)) {
+  if (d.status === "fighting") {
     throw new Error("Finish the delve first.");
   }
   d.memberIds = d.memberIds.filter((id) => id !== player.id);
