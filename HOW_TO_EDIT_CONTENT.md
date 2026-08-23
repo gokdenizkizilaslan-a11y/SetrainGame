@@ -1,6 +1,22 @@
 # How to add or change content
 
-Edit **only** `content.js` for numbers, classes, items, monsters, skills, dungeons, costs, XP, anomaly rates, and image paths. Then restart the server (`npm start`).
+**Easiest way: the web editor.** With the server running, open **http://localhost:3000/editor** in a browser. You get clickable forms for Classes, Monsters, Items & Shop, Skills, Dungeons, Loot & Drop Rates, Combat, Starting values, Anomalies and Story text — no terminal needed. Changes apply to `content.js` when you press **Save to content.js** (each save makes a backup first). Restart the server (`npm start`) afterwards.
+
+Two other ways to edit:
+
+- **Terminal editor:** run `npm run edit` for guided menus (same content, older interface).
+- **By hand:** open `content.js` directly. Everything below documents the fields.
+
+**Where is the editor allowed?** On your own computer (`localhost`) it is always open. On the published site it is **locked** so nobody else can tamper with the game. To enable it remotely, set a password on the server:
+
+```
+set CONTENT_EDIT_TOKEN=YourPassword
+npm start
+```
+
+then visit `https://your-game.onrender.com/editor?token=YourPassword`.
+
+Drag picture files into `public/images/...`. If a file is missing, the game still runs with a colored fallback.
 
 Drag picture files into `public/images/...`. If a file is missing, the game still runs with a colored fallback.
 
@@ -17,19 +33,7 @@ Open `content.js` → `classes`. Find the class (`warrior`, `mage`, …). The se
 
 ## Add a new class (easy way)
 
-Run the interactive class adder and it walks you through every field:
-
-```
-node scripts/add-class.js
-```
-
-It validates the slug is unused, checks your starting skills against the real skill list, and writes the finished class block into `content.js` for you (you confirm before it writes). Drop art at `public/images/characters/<slug>.png` and restart — it appears on the setup screen automatically.
-
-To feed it answers non-interactively, pipe one answer per line (last line `n` aborts without writing):
-
-```
-printf 'warlock\nWarlock\nwarlock_bolt\nBolt\n1.0\ndefend\n7\n360 420\n25 35\n50 70\n22 30\n30 45\n8 14\n11\n3\n3\n2\n3\n1\n/images/characters/warlock.png\nn\n' | node scripts/add-class.js
-```
+Run `npm run edit` → **Classes** → **Add new…** (or in the web editor: **Classes** → **Add**, pick an existing class to copy from), then edit its fields. It appears on the setup screen automatically once you restart.
 
 Or add a class by hand:
 

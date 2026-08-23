@@ -923,6 +923,68 @@ input:focus {
   font-size: 1rem;
 }
 
+.dungeon-card-drops {
+  font-size: 0.72rem;
+  color: var(--muted);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drop-panel {
+  margin-top: 1.1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--glass-line);
+  border-radius: 14px;
+  background: var(--glass-2);
+}
+
+.drop-panel-title {
+  font-family: "Cinzel", serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  margin-bottom: 0.6rem;
+}
+
+.drop-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.6rem;
+  margin-bottom: 0.45rem;
+}
+
+.drop-row:last-child {
+  margin-bottom: 0;
+}
+
+.drop-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  min-width: 4.2rem;
+}
+
+.drop-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.drop-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.72rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--drop) 55%, transparent);
+  background: color-mix(in srgb, var(--drop) 12%, transparent);
+  color: var(--drop);
+}
+
 .party-list {
   list-style: none;
   margin: 0.6rem 0;

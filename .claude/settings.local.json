@@ -57,7 +57,21 @@
       "Bash(npm init *)",
       "PowerShell(Get-NetTCPConnection *)",
       "Bash(curl -s http://localhost:3000/ -o /dev/null -w \"HTTP %{http_code}\\\\n\")",
-      "Bash(curl -s http://localhost:3000/style.css)"
+      "Bash(curl -s http://localhost:3000/style.css)",
+      "Bash(echo \"EXITCODE=$?\")",
+      "Bash(rm -f \"C:\\\\Users\\\\bahad\\\\AppData\\\\Local\\\\Temp\\\\setratest\\\\drive.js\" \"C:\\\\Users\\\\bahad\\\\AppData\\\\Local\\\\Temp\\\\setratest\\\\splittest.js\")",
+      "Bash(git check-ignore *)",
+      "Bash(curl -s -o NUL -w \"server / -> HTTP %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{content_type}\\\\n\" http://localhost:3000/editor/)",
+      "Bash(curl -s -o /dev/null -w \"editor.js: %{http_code}\\\\n\" http://localhost:3000/editor/editor.js)",
+      "Bash(curl -s -o /dev/null -w \"editor.css: %{http_code}\\\\n\" http://localhost:3000/editor/editor.css)",
+      "Bash(curl -s http://localhost:3000/api/editor -o /tmp/editor_api.json)",
+      "Bash(curl -s http://localhost:3000/api/editor)",
+      "Bash(curl -s http://localhost:3000/editor/api/editor)",
+      "Bash(curl -s -w \"\\\\nstatus: %{http_code}\\\\n\" -H \"Host: example.com\" http://localhost:3000/editor/api/editor)",
+      "Bash(curl -s -w \"\\\\nstatus: %{http_code}\\\\n\" -X POST -H \"Content-Type: application/json\" -d '{\"foo\":1}' http://localhost:3000/editor/api/editor/save)",
+      "Bash(PORT=3100 CONTENT_EDIT_TOKEN=testtoken123 node server.js)",
+      "Bash(grep -oE \"[A-Z]{1,2} >> [^<]+\" \"C:\\\\Users\\\\bahad\\\\.claude\\\\projects\\\\C--Users-bahad-Desktop-theSetragame\\\\8f10b574-2973-4055-9c08-3d1f7c116f67\\\\tool-results\\\\byzd5dikq.txt\")"
     ]
   }
 }

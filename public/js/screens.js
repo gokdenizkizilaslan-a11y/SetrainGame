@@ -683,18 +683,48 @@ function renderDungeonView(room) {
   if (d.status === "fighting" || d.status === "done") return renderCombat(room, root);
 }
 
+function rarityMetaOf(r) {
+  return (CATALOG.loot && CATALOG.loot.rarityMeta && CATALOG.loot.rarityMeta[r]) || {};
+}
+
+// What a dungeon of `rank` can drop, computed from the same data the server
+// rolls with (combat.js victory): per-monster dropChance + gradeWeights[rank].
+function dungeonDrops(rank) {
+  const dg = CATALOG.dungeons.find((x) => x.rank === rank) || {};
+  const pool = (dg.monsterPool || [])
+    .map((id) => CATALOG.monsters.find((m) => m.id === id))
+    .filter(Boolean);
+  const loot = CATALOG.loot || {};
+  const dropChance = loot.dropChance || {};
+  const perKill = [...new Set(pool.map((m) => m.rarity))]
+    .filter(Boolean)
+    .map((r) => ({ rarity: r, chance: dropChance[r] || 0 }));
+  const order = loot.rarityOrder || [];
+  const weights = (loot.gradeWeights || {})[rank] || (loot.gradeWeights || {}).f || {};
+  const total = order.reduce((s, r) => s + (weights[r] || 0), 0);
+  const odds = order
+    .map((r) => ({ rarity: r, pct: total ? Math.round(((weights[r] || 0) / total) * 1000) / 10 : 0 }))
+    .filter((o) => o.pct > 0);
+  return { pool, perKill, odds };
+}
+
 function renderDungeonMenu(room, root) {
   root.innerHTML =
     `<p class="lead">Choose a dungeon, then a size. The first to join a party leads it.</p>` +
     `<div class="dungeon-grid">` +
     CATALOG.dungeons
-      .map(
-        (dg) => `
+      .map((dg) => {
+        const top = [...dungeonDrops(dg.rank).odds].sort((a, b) => b.pct - a.pct).slice(0, 3);
+        const hint = top
+          .map((o) => `${escapeHtml(rarityMetaOf(o.rarity).label || o.rarity)} ${o.pct}%`)
+          .join(" · ");
+        return `
       <button type="button" class="dungeon-card" data-rank="${dg.rank}">
         <span class="portrait portrait--dungeon dungeon-tile" data-img="${dg.image}" data-variant="dungeon"></span>
         <span class="dungeon-card-label">${escapeHtml(dg.label)}</span>
-      </button>`
-      )
+        <span class="dungeon-card-drops">${hint}</span>
+      </button>`;
+      })
       .join("") +
     `</div>`;
   root.querySelectorAll("[data-rank]").forEach((b) =>
@@ -705,6 +735,26 @@ function renderDungeonMenu(room, root) {
 
 function renderSizeGrid(room, root, rank) {
   const dg = CATALOG.dungeons.find((x) => x.rank === rank);
+  const drops = dungeonDrops(rank);
+  const chip = (o, text) =>
+    `<span class="drop-chip" style="--drop:${rarityMetaOf(o.rarity).color || "#9aa7b5"}">${escapeHtml(text)}</span>`;
+  const monsterChips = drops.pool
+    .map((m) => chip({ rarity: m.rarity }, m.name))
+    .join("");
+  const perKillLine = drops.perKill
+    .map((p) => chip(p, `${rarityMetaOf(p.rarity).label || p.rarity} ${Math.round(p.chance * 100)}%`))
+    .join("");
+  const oddsLine = drops.odds
+    .map((o) => chip(o, `${rarityMetaOf(o.rarity).label || o.rarity} ${o.pct}%`))
+    .join("");
+  const panel = drops.pool.length
+    ? `<div class="drop-panel">
+        <div class="drop-panel-title">Possible Drops</div>
+        <div class="drop-row"><span class="drop-label">Monsters</span><span class="drop-chips">${monsterChips}</span></div>
+        <div class="drop-row"><span class="drop-label">Per kill</span><span class="drop-chips">${perKillLine}</span></div>
+        <div class="drop-row"><span class="drop-label">Item rarity</span><span class="drop-chips">${oddsLine}</span></div>
+      </div>`
+    : "";
   root.innerHTML =
     `<button type="button" class="btn btn--ghost" id="btn-back-ranks">← All Dungeons</button>` +
     `<p class="subhead">${escapeHtml(dg.label)} — choose a size</p>` +
@@ -718,7 +768,8 @@ function renderSizeGrid(room, root, rank) {
       </button>`
       )
       .join("") +
-    `</div>`;
+    `</div>` +
+    panel;
   root.querySelectorAll("[data-size]").forEach((b) =>
     b.addEventListener("click", () => socket.emit("dungeon:join", { rank, size: b.getAttribute("data-size") }))
   );

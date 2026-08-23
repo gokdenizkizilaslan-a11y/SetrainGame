@@ -4,6 +4,7 @@ const path = require("path");
 const express = require("express");
 const { Server } = require("socket.io");
 const { registerSocketHandlers } = require("./server/socketHandlers");
+const editorRoutes = require("./server/editorRoutes");
 
 const PORT = process.env.PORT || 3000;
 const MUSIC_DIR = path.join(__dirname, "public", "music");
@@ -11,7 +12,10 @@ const SOUND_DIR = path.join(__dirname, "public", "sounds");
 const AUDIO_EXT = [".mp3", ".ogg", ".wav", ".m4a", ".flac"];
 
 const app = express();
+app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
+
+app.use("/editor", editorRoutes);
 
 app.get("/api/music", (req, res) => {
   let tracks = [];
