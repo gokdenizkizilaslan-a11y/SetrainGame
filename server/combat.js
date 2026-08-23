@@ -9,6 +9,7 @@ const {
 } = require("../content");
 const { dealDamage, heal, loseLife, addXp, removeItem, healForFood, addItem } = require("./players");
 const chest = require("./chest");
+const dungeonModule = require("./dungeon");
 
 function randVariance(variance) {
   return 1 + (Math.random() * 2 - 1) * variance;
@@ -478,6 +479,56 @@ function endTurn(room, player) {
     throw new Error("You are down.");
   }
   return advanceTurn(room, d);
+}
+
+function flee(room, player) {
+  const d = myDungeon(room, player);
+  if (!d || d.status !== "fighting") {
+    throw new Error("No combat in progress.");
+  }
+  if (d.phase !== "players") {
+    throw new Error("The monsters are acting.");
+  }
+  if (d.currentTurnId !== player.id) {
+    throw new Error("It is not your turn.");
+  }
+  if (player.hp <= 0) {
+    throw new Error("You are down.");
+  }
+  // Flee only allowed above 20% HP
+  if (player.hp <= Math.floor(player.maxHp * 0.2)) {
+    throw new Error("Too wounded to flee! (Need >20% HP)");
+  }
+  
+  // Penalty: lose 1 life and some gold
+  player.lives = Math.max(0, player.lives - 1);
+  const goldLoss = Math.floor(player.gold * 0.1);
+  player.gold = Math.max(0, player.gold - goldLoss);
+  
+  // Remove from dungeon
+  const memberIds = d.memberIds.filter((id) => id !== player.id);
+  d.memberIds = memberIds;
+  player.dungeonId = null;
+  player.hp = player.maxHp;
+  player.mana = player.maxMana;
+  
+  // If player was leader, pass leadership
+  if (d.leaderId === player.id && memberIds.length > 0) {
+    d.leaderId = memberIds[0];
+  }
+  
+  // If party empty, clean up
+  if (memberIds.length === 0) {
+    dungeonModule.clearDungeonTimers(d);
+    room.dungeons = (room.dungeons || []).filter((x) => x !== d);
+  } else {
+    // Rebuild turn order
+    buildTurnOrder(room, d);
+  }
+  
+  d.log.push(`${player.name} fled from combat! Lost 1 life and ${goldLoss} gold.`);
+  
+  return { fled: true, goldLoss, lifeLost: 1 };
 }
 
 function advanceTurn(room, d) {

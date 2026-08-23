@@ -1274,6 +1274,9 @@ function renderCombat(room, root) {
   else hint = "Your turn — choose an action.";
 
   const endTurnBtn = canAct ? `<button type="button" class="btn btn--gold" id="btn-end-turn">End Turn</button>` : "";
+  const fleeBtn = (canAct && me.hp > Math.floor(me.maxHp * 0.2)) 
+    ? `<button type="button" class="btn btn--bronze" id="btn-flee">Flee</button>` 
+    : "";
   const timerHtml = `<div class="turn-timer${canAct ? "" : " turn-timer--idle"}"><div class="turn-timer-fill" id="turn-timer-fill"></div></div>`;
   const logHtml = `<div class="combat-log">${d.log.slice(-8).map((l) => `<div class="log-line">${escapeHtml(l)}</div>`).join("")}</div>`;
 
@@ -1285,7 +1288,7 @@ function renderCombat(room, root) {
       <div class="skill-bar">${skillsHtml}</div>
       <div class="item-bar">${itemsHtml}</div>
       <div class="combat-hint">${escapeHtml(hint)}</div>
-      <div class="combat-actions">${endTurnBtn}</div>
+      <div class="combat-actions">${fleeBtn}${endTurnBtn}</div>
       ${timerHtml}
       ${logHtml}
     </div>
@@ -1342,6 +1345,15 @@ function renderCombat(room, root) {
       if (me.hp <= 0) return;
       state.timerDeadline = null;
       socket.emit("combat:endTurn");
+    });
+  }
+  const fleeBtnEl = root.querySelector("#btn-flee");
+  if (fleeBtnEl) {
+    fleeBtnEl.addEventListener("click", () => {
+      if (me.hp <= 0) return;
+      if (me.hp <= Math.floor(me.maxHp * 0.2)) return;
+      state.timerDeadline = null;
+      socket.emit("combat:flee");
     });
   }
   const openChestBtn = root.querySelector("#btn-result-open-chest");

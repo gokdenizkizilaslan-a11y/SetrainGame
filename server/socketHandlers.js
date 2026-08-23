@@ -615,6 +615,17 @@ function registerSocketHandlers(io) {
       }
     });
 
+    socket.on("combat:flee", () => {
+      try {
+        const { room, player } = gameContext(socket);
+        const result = combat.flee(room, player);
+        emitCombatFx(io, room);
+        emitRoomState(io, room);
+      } catch (err) {
+        emitError(socket, err);
+      }
+    });
+
     socket.on("disconnect", () => {
       const session = sessions.getByPlayerId(socket.id);
       if (session) {

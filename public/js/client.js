@@ -593,5 +593,4 @@ $("music-audio").addEventListener("ended", nextTrack);
 
 loadMusic();
 
-renderClassGrid(state.selectedClass, selectClass);
 showScreen("screen-mode");
