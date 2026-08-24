@@ -793,23 +793,16 @@ function renderDungeonView(room) {
   const container = $("dungeon-content");
   if (!container) return;
 
-  // 1. Savaş başladıysa veya bittiyse direkt savaş ekranını çiz:
+  // 1. Savaş başladıysa veya bittiyse savaş ekranını çiz:
   if (d && (d.status === "fighting" || d.status === "done")) {
     container.className = "overlay-body no-scrollbar";
     renderCombat(room, container);
     return;
   }
 
-  // 2. Eğer bir partiye katıldıysan (forming), parti odasını göster:
-  if (d && d.status === "forming") {
-    container.className = "dungeon-split-view";
-    renderDungeonParty(room);
-    return;
-  }
-
-  // 3. Menü yapısını koru:
-  if (!container.classList.contains("dungeon-split-view")) {
-    container.className = "dungeon-split-view";
+  // 2. Menü veya parti bekleme odası için çift panelli yapıyı her zaman hazırla:
+  container.className = "dungeon-split-view";
+  if (!$("dungeon-list") || !$("dungeon-rooms-list")) {
     container.innerHTML = `
       <div class="dungeon-list-section">
         <div id="dungeon-list"></div>
@@ -822,12 +815,16 @@ function renderDungeonView(room) {
       </div>`;
   }
 
-  if (state.selectedDungeonRank) {
+  // 3. Duruma göre ilgili ekranı çiz:
+  if (d && d.status === "forming") {
+    renderDungeonParty(room);
+  } else if (state.selectedDungeonRank) {
     renderDungeonSizeModal(room, state.selectedDungeonRank);
   } else {
     renderDungeonMenu(room);
   }
 }
+
 function dungeonDrops(rank) {
   const dg = CATALOG.dungeons.find((x) => x.rank === rank) || {};
   const pool = (dg.monsterPool || [])
