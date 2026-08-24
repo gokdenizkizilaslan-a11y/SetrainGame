@@ -5,6 +5,7 @@ const state = {
   selectedClass: null,
   playerId: null,
   room: null,
+  selectedDungeonRank: null,
   selectedSkill: null,
   bet: 5,
   dungeonOpen: false,

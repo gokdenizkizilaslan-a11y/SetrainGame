@@ -793,14 +793,21 @@ function renderDungeonView(room) {
   const container = $("dungeon-content");
   if (!container) return;
 
-  // Savaş başladıysa veya bittiyse savaş ekranını çiz:
+  // 1. Savaş başladıysa veya bittiyse direkt savaş ekranını çiz:
   if (d && (d.status === "fighting" || d.status === "done")) {
     container.className = "overlay-body no-scrollbar";
     renderCombat(room, container);
     return;
   }
 
-  // Menüye geri dönüldüyse çift panelli yapıyı koru:
+  // 2. Eğer bir partiye katıldıysan (forming), parti odasını göster:
+  if (d && d.status === "forming") {
+    container.className = "dungeon-split-view";
+    renderDungeonParty(room);
+    return;
+  }
+
+  // 3. Menü yapısını koru:
   if (!container.classList.contains("dungeon-split-view")) {
     container.className = "dungeon-split-view";
     container.innerHTML = `
@@ -815,19 +822,12 @@ function renderDungeonView(room) {
       </div>`;
   }
 
-  if (!d || d.status === "idle") {
+  if (state.selectedDungeonRank) {
+    renderDungeonSizeModal(room, state.selectedDungeonRank);
+  } else {
     renderDungeonMenu(room);
-  } else if (d.status === "forming") {
-    renderDungeonParty(room);
   }
 }
-
-function rarityMetaOf(r) {
-  return (CATALOG.loot && CATALOG.loot.rarityMeta && CATALOG.loot.rarityMeta[r]) || {};
-}
-
-// What a dungeon of `rank` can drop, computed from the same data the server
-// rolls with (combat.js victory): per-monster dropChance + gradeWeights[rank].
 function dungeonDrops(rank) {
   const dg = CATALOG.dungeons.find((x) => x.rank === rank) || {};
   const pool = (dg.monsterPool || [])
@@ -848,6 +848,7 @@ function dungeonDrops(rank) {
 }
 
 function renderDungeonMenu(room) {
+  state.selectedDungeonRank = null;
   const sortedDungeons = [...CATALOG.dungeons].sort((a, b) => (a.displayOrder || 999) - (b.displayOrder || 999));
   const listRoot = $("dungeon-list");
   const roomsRoot = $("dungeon-rooms-list");
@@ -879,7 +880,10 @@ function renderDungeonMenu(room) {
     `</div>`;
   
   listRoot.querySelectorAll("[data-rank]").forEach((b) =>
-    b.addEventListener("click", () => renderDungeonSizeModal(room, b.getAttribute("data-rank")))
+    b.addEventListener("click", () => {
+      state.selectedDungeonRank = b.getAttribute("data-rank");
+      renderDungeonSizeModal(room, state.selectedDungeonRank);
+    })
   );
   
   // Right: Forming parties panel (all ranks)

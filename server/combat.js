@@ -564,6 +564,7 @@ function startMonsterPhase(room, d) {
   d.monsterTimer = setTimeout(() => runNextMonster(room, d), 0);
 }
 
+// server/combat.js içindeki runNextMonster fonksiyonu:
 function runNextMonster(room, d) {
   if (d.status !== "fighting" || d.phase !== "monsters") return;
   d.monsterTimer = null;
@@ -572,50 +573,55 @@ function runNextMonster(room, d) {
     return;
   }
   const { mon, index } = d.monsterQueue.shift();
-  if (mon.hp > 0) {
-    const skill = pickMonsterSkill(mon);
-    const targets = livingMembers(room, d);
-    const target = targets[Math.floor(Math.random() * targets.length)];
-    const combat = CONTENT.combat;
-    if (skill.kind === "heal") {
-      const healed = healMonster(mon, skill.amount);
-      if (healed > 0) {
-        addFx(d, { type: "heal", actor: index, target: "enemy", targetId: index, amount: healed, source: "monster", effect: "heal" });
-        d.log.push(`${mon.name} uses ${skill.name} and recovers ${healed} HP.`);
-      }
-    } else if (skill.kind === "buff") {
-      applyBuffs(room, d, { id: "monster_" + index }, mon.name, skill, "monster", [index], false);
-    } else if (skill.kind === "debuff") {
-      if (target) {
-        applyBuffs(room, d, { id: "monster_" + index }, mon.name, skill, "player", [target.id], false);
-      }
-    } else {
-      if (target) {
-        const crit = Math.random() < (combat.critChance || 0);
-        const critMult = crit ? combat.critMult || 1.5 : 1;
-        const mAtk = buffSum(d, "monster", index, "attack") - buffSum(d, "monster", index, "weaken");
-        const pDef = buffSum(d, "player", target.id, "defense");
-        const pExp = buffSum(d, "player", target.id, "expose");
-        let dmg = Math.round(
-          mon.attack * (skill.power || 1) * randVariance(combat.damageVariance) * critMult * (1 + mAtk) * (1 - pDef + pExp)
-        );
-        dmg -= Math.round(target.resistance * combat.resistanceMitigation);
-        dmg = Math.max(1, dmg);
-        dealDamage(target, dmg);
-        addFx(d, { type: "damage", actor: target.id, target: "player", targetId: target.id, amount: dmg, source: "monster", monster: mon.kind, elem: skill.element || mon.element || "physical", effect: "monster", crit });
-      }
+  
+  // Eğer bu canavar zaten ölmüşse HİÇ BEKLEMEDEN hemen bir sonrakine geç:
+  if (mon.hp <= 0) {
+    runNextMonster(room, d);
+    return;
+  }
+
+  const skill = pickMonsterSkill(mon);
+  const targets = livingMembers(room, d);
+  const target = targets[Math.floor(Math.random() * targets.length)];
+  const combat = CONTENT.combat;
+  if (skill.kind === "heal") {
+    const healed = healMonster(mon, skill.amount);
+    if (healed > 0) {
+      addFx(d, { type: "heal", actor: index, target: "enemy", targetId: index, amount: healed, source: "monster", effect: "heal" });
+      d.log.push(`${mon.name} uses ${skill.name} and recovers ${healed} HP.`);
     }
-    if (typeof room.broadcast === "function") room.broadcast();
-    if (livingMembers(room, d).length === 0) {
-      clearMonsterTimer(d);
-      defeat(room, d);
-      if (typeof room.broadcast === "function") room.broadcast();
-      return;
+  } else if (skill.kind === "buff") {
+    applyBuffs(room, d, { id: "monster_" + index }, mon.name, skill, "monster", [index], false);
+  } else if (skill.kind === "debuff") {
+    if (target) {
+      applyBuffs(room, d, { id: "monster_" + index }, mon.name, skill, "player", [target.id], false);
+    }
+  } else {
+    if (target) {
+      const crit = Math.random() < (combat.critChance || 0);
+      const critMult = crit ? combat.critMult || 1.5 : 1;
+      const mAtk = buffSum(d, "monster", index, "attack") - buffSum(d, "monster", index, "weaken");
+      const pDef = buffSum(d, "player", target.id, "defense");
+      const pExp = buffSum(d, "player", target.id, "expose");
+      let dmg = Math.round(
+        mon.attack * (skill.power || 1) * randVariance(combat.damageVariance) * critMult * (1 + mAtk) * (1 - pDef + pExp)
+      );
+      dmg -= Math.round(target.resistance * combat.resistanceMitigation);
+      dmg = Math.max(1, dmg);
+      dealDamage(target, dmg);
+      addFx(d, { type: "damage", actor: target.id, target: "player", targetId: target.id, amount: dmg, source: "monster", monster: mon.kind, elem: skill.element || mon.element || "physical", effect: "monster", crit });
     }
   }
-  if (d.status !== "fighting" || d.phase !== "monsters") return;
+  if (typeof room.broadcast === "function") room.broadcast();
+  if (livingMembers(room, d).length === 0) {
+    clearMonsterTimer(d);
+    defeat(room, d);
+    if (typeof room.broadcast === "function") room.broadcast();
+    return;
+  }
+
   clearMonsterTimer(d);
-  d.monsterTimer = setTimeout(() => runNextMonster(room, d), CONTENT.combat.monsterAttackDelayMs || 900);
+  d.monsterTimer = setTimeout(() => runNextMonster(room, d), 400); // 900ms yerine 400ms yapılarak oyun akıcılaştırıldı
 }
 
 function finishMonsterPhase(room, d) {
@@ -732,9 +738,11 @@ function defeat(room, d) {
   d.log.push(d.result.text);
 }
 
+// ✅ YENİ (flee eklendi):
 module.exports = {
   spawnWave,
   act,
   useItem,
   endTurn,
+  flee,
 };
